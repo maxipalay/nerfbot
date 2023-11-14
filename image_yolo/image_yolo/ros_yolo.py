@@ -28,9 +28,8 @@ class Camera_subscriber(Node):
         self.intrinsics = None
         self.pix = None
         self.pix_grade = None
-        path = os.path.abspath()
-        dir = os.path.dirname(path)
-        self.model = YOLO(dir + '/best.pt')
+        path = os.path.dirname(__file__)
+        self.model = YOLO(path + '/best.pt')
 
         self.yolov8_inference = Yolov8Inference()
 
