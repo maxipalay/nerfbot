@@ -11,6 +11,7 @@ import sys
 import os
 import numpy as np
 import pyrealsense2 as rs2
+import os
 
 
 
@@ -27,7 +28,9 @@ class Camera_subscriber(Node):
         self.intrinsics = None
         self.pix = None
         self.pix_grade = None
-        self.model = YOLO('/home/rahulroy/ws_image/src/image_yolo/image_yolo/best.pt')
+        path = os.path.abspath()
+        dir = os.path.dirname(path)
+        self.model = YOLO(dir + '/best.pt')
 
         self.yolov8_inference = Yolov8Inference()
 
