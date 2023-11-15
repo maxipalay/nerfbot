@@ -28,12 +28,27 @@ class Camera_subscriber(Node):
         self.pix = None
         self.pix_grade = None
         self.model = YOLO('/home/rahulroy/ws_image/src/image_yolo/image_yolo/best.pt')
-
+        self.pin_centroids = []
         self.yolov8_inference = Yolov8Inference()
 
 
         self.yolov8_pub = self.create_publisher(Yolov8Inference, "/Yolov8_Inference", 1)
         self.img_pub = self.create_publisher(msg_Image, "/inference_result", 1)
+
+
+    def detect_pins(self, image):
+        results = self.model(image)  # Use the YOLO model to get detection results
+        
+
+        for r in results:
+            boxes = r.boxes
+            for box in boxes:
+                b = box.xyxy[0].to('cpu').detach().numpy().copy()  # Get box coordinates in (top, left, bottom, right) format
+                centroid = ((b[1] + b[3]) // 2, (b[0] + b[2]) // 2)  # Calculate centroid from box coordinates
+                self.pin_centroids.append(centroid)
+                
+
+        return self.pin_centroids
 
     def camera_callback(self, data):
 
@@ -50,6 +65,8 @@ class Camera_subscriber(Node):
                 b = box.xyxy[0].to('cpu').detach().numpy().copy()  # get box coordinates in (top, left, bottom, right) format
                 c = box.cls
                 self.inference_result.class_name = self.model.names[int(c)]
+                if self.inference_result.class_name == "no_pins":
+                    continue
                 self.inference_result.top = int(b[0])
                 self.inference_result.left = int(b[1])
                 self.inference_result.bottom = int(b[2])
@@ -66,6 +83,9 @@ class Camera_subscriber(Node):
         self.img_pub.publish(img_msg)
         self.yolov8_pub.publish(self.yolov8_inference)
         self.yolov8_inference.yolov8_inference.clear()
+        self.pin_centroids = self.detect_pins(img)
+        
+   
 
     # def imageDepthCallback(self, data):
     #     try:
@@ -118,3 +138,4 @@ def main(args=None):
     node = Camera_subscriber()
     rclpy.spin(node)
     rclpy.shutdown()
+
