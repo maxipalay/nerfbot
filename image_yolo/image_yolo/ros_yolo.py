@@ -28,7 +28,6 @@ class Camera_subscriber(Node):
         self.intrinsics = None
         self.pix = None
         self.pix_grade = None
-        self.pin_centroids = []
         path = os.path.dirname(__file__)
         self.model = YOLO(path + '/best.pt')
 
