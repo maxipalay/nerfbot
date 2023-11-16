@@ -8,7 +8,9 @@ from sensor_msgs.msg import CameraInfo
 import cv2
 from std_srvs.srv import Empty
 from cv_bridge import CvBridge, CvBridgeError
+from visualization_msgs.msg import Marker, MarkerArray
 import sys
+from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 import os
 import numpy as np
 from geometry_msgs.msg import PointStamped
@@ -50,6 +52,11 @@ class Camera_subscriber(Node):
         self.point_msg = PointStamped()
         self.pub = self.create_publisher(msg_Image, "pixel_img", 10)
 
+        markerQoS = QoSProfile(
+            depth=10, durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)
+        self.pub2 = self.create_publisher(
+            MarkerArray, "visualization_marker_array", markerQoS)
+
 
     def detect_pins(self, request, response):
         pin_centroids = {}  # Dictionary to store centroids for each class
@@ -72,10 +79,10 @@ class Camera_subscriber(Node):
                     self.point_msg.point.x = centroid[0]  # Set x, y, z coordinates
                     self.point_msg.point.y = centroid[1]
                     self.point_msg.point.z = 0  
-                    print(self.point_msg)
+                    
                     if self.intrinsics and self._latest_depth_img is not None and self._latest_color_img is not None:
                         self.get_logger().info("processing request")
-                        # this is where the processing takes place
+                    
                         depth_x = int(self.point_msg.point.x)
                         depth_y = int(self.point_msg.point.y)
                         depth = self._latest_depth_img[depth_x, depth_y]
@@ -84,12 +91,29 @@ class Camera_subscriber(Node):
                         self.point_msg.point.x = result[0]
                         self.point_msg.point.y = result[1]
                         self.point_msg.point.z = result[2]
-                        print(self.point_msg)
-                        # this is just a visualization thing
-                        img = cv2.circle(self._latest_color_img, (self.point_msg.point.x,self.point_msg.point.y), radius=5, color=(0,0,255), thickness=-1)
-                        img_msg = self.bridge.cv2_to_imgmsg(img)
-                        self.pub.publish(img_msg)
-                
+                        self.markerarr = MarkerArray()
+                        self.m = Marker()
+                        self.m.header.frame_id = "camera_color_frame"
+                        self.m.header.stamp = self.get_clock().now().to_msg()
+                        self.m.id = 1
+                        self.m.type = Marker.SPHERE
+                        self.m.action = Marker.ADD
+                        self.m.scale.x = 0.3
+                        self.m.scale.y = 0.3
+                        self.m.scale.z = 0.3
+                        self.m.pose.position.x = self.point_msg.point.x/1000
+                        self.m.pose.position.y = self.point_msg.point.y/1000
+                        self.m.pose.position.z = self.point_msg.point.z/1000
+                        self.m.pose.orientation.x = 0.0
+                        self.m.pose.orientation.y = 0.0
+                        self.m.pose.orientation.z = 0.0
+                        self.m.pose.orientation.w = 0.0
+                        self.m.color.r = 0.0
+                        self.m.color.g = 0.0
+                        self.m.color.b = 1.0
+                        self.m.color.a = 1.0
+                        self.markerarr.markers.append(self.m)
+                        self.pub2.publish(self.markerarr)
         return response
     
     def get_latest_frame(self,data):
@@ -102,24 +126,7 @@ class Camera_subscriber(Node):
             return
         except ValueError as e:
             return
-        
-
-    # def getPixelCoords(self):
-    #     if self.intrinsics and self._latest_depth_img is not None and self._latest_color_img is not None:
-    #         self.get_logger().info("processing request")
-    #         # this is where the processing takes place
-    #         depth = self._latest_depth_img[self.point_msg.point.x,self.point_msg.point.y]
-    #         result = rs2.rs2_deproject_pixel_to_point(self.intrinsics, [self.point_msg.point.x, self.point_msg.point.y], depth)
-    #         self.point_msg.point.x = result[0]
-    #         self.point_msg.point.y = result[1]
-    #         self.point_msg.point.z = result[2]
-    #         print(self.point_msg)
-    #         # this is just a visualization thing
-    #         img = cv2.circle(self._latest_color_img, (self.point_msg.point.x,self.point_msg.point.y), radius=5, color=(0,0,255), thickness=-1)
-    #         img_msg = self.bridge.cv2_to_imgmsg(img)
-    #         self.pub.publish(img_msg)
-
-    #     return       
+             
      
     def imageDepthInfoCallback(self, cameraInfo):
         try:
@@ -150,88 +157,6 @@ class Camera_subscriber(Node):
         except ValueError as e:
             return
 
-    # def camera_callback(self, data):
-
-    #     img = bridge.imgmsg_to_cv2(data, "bgr8")
-    #     results = self.model(img)
-
-    #     self.yolov8_inference.header.frame_id = "inference"
-    #     self.yolov8_inference.header.stamp = self.get_clock().now().to_msg()
-
-    #     for r in results:
-    #         boxes = r.boxes
-    #         for box in boxes:
-    #             self.inference_result = InferenceResult()
-    #             b = box.xyxy[0].to('cpu').detach().numpy().copy()  # get box coordinates in (top, left, bottom, right) format
-    #             c = box.cls
-    #             self.inference_result.class_name = self.model.names[int(c)]
-    #             if self.inference_result.class_name == "no_pins":
-    #                 continue
-    #             self.inference_result.top = int(b[0])
-    #             self.inference_result.left = int(b[1])
-    #             self.inference_result.bottom = int(b[2])
-    #             self.inference_result.right = int(b[3])
-    #             self.yolov8_inference.yolov8_inference.append(self.inference_result)
-
-    #         #camera_subscriber.get_logger().info(f"{self.yolov8_inference}")
-
-    #     annotated_frame = results[0].plot()
-    #     img_with_overlay = cv2.addWeighted(img, 0.7, annotated_frame, 0.3, 0)
-    #     img_msg = bridge.cv2_to_imgmsg(img_with_overlay)
-    #     # img_msg = bridge.cv2_to_imgmsg(annotated_frame)  
-
-    #     self.img_pub.publish(img_msg)
-    #     self.yolov8_pub.publish(self.yolov8_inference)
-    #     self.yolov8_inference.yolov8_inference.clear()
-
-        
-   
-
-    # def imageDepthCallback(self, data):
-    #     try:
-    #         cv_image = self.bridge.imgmsg_to_cv2(data, data.encoding)
-    #         # pick one pixel among all the pixels with the closest range:
-    #         indices = np.array(np.where(cv_image == cv_image[cv_image > 0].min()))[:,0]
-    #         pix = (indices[1], indices[0])
-    #         self.pix = pix
-    #         line = '\rDepth at pixel(%3d, %3d): %7.1f(mm).' % (pix[0], pix[1], cv_image[pix[1], pix[0]])
-
-    #         if self.intrinsics:
-    #             depth = cv_image[pix[1], pix[0]]
-    #             result = rs2.rs2_deproject_pixel_to_point(self.intrinsics, [pix[0], pix[1]], depth)
-    #             line += '  Coordinate: %8.2f %8.2f %8.2f.' % (result[0], result[1], result[2])
-    #         if (not self.pix_grade is None):
-    #             line += ' Grade: %2d' % self.pix_grade
-    #         line += '\r'
-    #         sys.stdout.write(line)
-    #         sys.stdout.flush()
-
-    #     except CvBridgeError as e:
-    #         print(e)
-    #         return
-    #     except ValueError as e:
-    #         return
-
-
-    # def imageDepthInfoCallback(self, cameraInfo):
-    #     try:
-    #         if self.intrinsics:
-    #             return
-    #         self.intrinsics = rs2.intrinsics()
-    #         self.intrinsics.width = cameraInfo.width
-    #         self.intrinsics.height = cameraInfo.height
-    #         self.intrinsics.ppx = cameraInfo.k[2]
-    #         self.intrinsics.ppy = cameraInfo.k[5]
-    #         self.intrinsics.fx = cameraInfo.k[0]
-    #         self.intrinsics.fy = cameraInfo.k[4]
-    #         if cameraInfo.distortion_model == 'plumb_bob':
-    #             self.intrinsics.model = rs2.distortion.brown_conrady
-    #         elif cameraInfo.distortion_model == 'equidistant':
-    #             self.intrinsics.model = rs2.distortion.kannala_brandt4
-    #         self.intrinsics.coeffs = [i for i in cameraInfo.d]
-    #     except CvBridgeError as e:
-    #         print(e)
-    #         return
 
 def main(args=None):
     rclpy.init(args=args)
