@@ -22,6 +22,7 @@ class ControlNode(Node):
         # clients and publishers
         self._input_client = self.create_client(Empty, 'input', callback_group = self._cbgrp)
         self._vision_client = self.create_client(Empty, 'inference', callback_group = self._cbgrp)
+        self._gun_client = self.create_client(Empty, 'gun_scan', callback_group=self._cbgrp)
         self._marker_pub = self.create_publisher(MarkerArray, "visualization_marker", markerQoS)
         
         # wait for services to become available
@@ -47,6 +48,8 @@ class ControlNode(Node):
         # RUN ONCE!
         # scan targets
         # scan guns
+        
+
         # wait for user input
         # shoot
         return
@@ -79,7 +82,8 @@ class ControlNode(Node):
         """ Pusblishes YOLO detections as Markers to visualize them in Rviz. """
         self._marker_pub.publish(self._markers)
 
-        return 
+        return
+    
 
     def scan_targets(self, ):
         """ Moves the robot to scanning positions and requests for detections. """
