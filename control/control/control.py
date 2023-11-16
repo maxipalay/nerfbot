@@ -57,7 +57,7 @@ class ControlNode(Node):
         try:
             # get the latest transform between left and right
             # (rclpy.time.Time() means get the latest information)
-            tag_1 = self.buffer.lookup_transform("camera_link","tag_36h11.1",rclpy.time.Time())
+            tag_1 = self.buffer.lookup_transform("camera_link","tag36h11:1",rclpy.time.Time())
             self.t1_x = tag_1.transform.translation.x
             self.t1_y = tag_1.transform.translation.y
             self.t1_z = tag_1.transform.translation.z
