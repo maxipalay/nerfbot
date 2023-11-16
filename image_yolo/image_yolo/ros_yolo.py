@@ -80,15 +80,16 @@ class Camera_subscriber(Node):
                         x, y, z = self.depth_world(centroid[0], centroid[1])  # Get x, y, z from depth_world function
                         red_pins.append((x, y, z)) 
                         for i in red_pins:
+                            count=0
                             self.point_r.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_r.header.frame_id = str(i)
                             self.point_r.point.x = i[0]  # Set x, y, z coordinates
                             self.point_r.point.y = i[1]
                             self.point_r.point.z = i[2]  
-                            self.create_marker(i[0], i[1], i[2], i)
+                            self.create_marker(i[0], i[1], i[2], count )
+                            count+=1
                             print(self.point_r)             
                     elif class_name == "yellow_pins":
-                        yellow_pins.append(centroid)
                         x1, y1, z1 = self.depth_world(centroid[0], centroid[1])  # Get x, y, z from depth_world function
                         yellow_pins.append((x1, y1, z1))
                         for j in yellow_pins:
@@ -96,11 +97,10 @@ class Camera_subscriber(Node):
                             self.point_y.header.frame_id = str(j) 
                             self.point_y.point.x = j[0]  # Set x, y, z coordinates
                             self.point_y.point.y = j[1]
-                            self.point_y.point.z = j[3]
+                            self.point_y.point.z = j[2]
                     elif class_name == "green_pins":
-                        green_pins.append(centroid)
                         x2, y2, z2 = self.depth_world(centroid[0], centroid[1])  # Get x, y, z from depth_world function
-                        red_pins.append((x2, y2, z2))
+                        green_pins.append((x2, y2, z2))
                         for k in green_pins:
                             self.point_g.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_g.header.frame_id = str(k) 
@@ -132,31 +132,32 @@ class Camera_subscriber(Node):
             return x_new, y_new, z_new
 
 
-    def create_marker(self,x,y,z,i):
-        self.markerarr = MarkerArray()
-        self.m = Marker()
-        self.m.header.frame_id = "camera_color_frame"
-        self.m.header.stamp = self.get_clock().now().to_msg()
-        self.m.id = 1
-        self.m.type = Marker.SPHERE
-        self.m.action = Marker.ADD
-        self.m.scale.x = 0.3
-        self.m.scale.y = 0.3
-        self.m.scale.z = 0.3
-        self.m.pose.position.x = x/1000
-        self.m.pose.position.y = y/1000
-        self.m.pose.position.z = z/1000
-        self.m.pose.orientation.x = 0.0
-        self.m.pose.orientation.y = 0.0
-        self.m.pose.orientation.z = 0.0
-        self.m.pose.orientation.w = 0.0
-        self.m.color.r = 0.0
-        self.m.color.g = 0.0
-        self.m.color.b = 1.0
-        self.m.color.a = 1.0
-        self.markerarr.markers.append(self.m)
-        self.pub2.publish(self.markerarr)
-
+    def create_marker(self, x, y, z, count):
+        marker = Marker()
+        marker.header.frame_id = "camera_color_frame"
+        marker.header.stamp = self.get_clock().now().to_msg()
+        marker.id = count
+        marker.type = Marker.SPHERE
+        marker.action = Marker.ADD
+        marker.scale.x = 0.3
+        marker.scale.y = 0.3
+        marker.scale.z = 0.3
+        marker.pose.position.x = x / 1000
+        marker.pose.position.y = y / 1000
+        marker.pose.position.z = z / 1000
+        marker.pose.orientation.x = 0.0
+        marker.pose.orientation.y = 0.0
+        marker.pose.orientation.z = 0.0
+        marker.pose.orientation.w = 0.0
+        marker.color.r = 0.0
+        marker.color.g = 0.0
+        marker.color.b = 1.0
+        marker.color.a = 1.0
+        marker_array = MarkerArray()  # Initialize MarkerArray
+        marker_array.markers.append(marker)  # Append the marker to the MarkerArray
+    
+        self.pub2.publish(marker_array) 
+        
 
     def get_latest_frame(self,data):
         # Wait for a new frame from the RealSense camera
