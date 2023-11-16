@@ -4,6 +4,10 @@ from std_srvs.srv import Empty
 from visualization_msgs.msg import MarkerArray
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 from rclpy.callback_groups import ReentrantCallbackGroup
+import tf2_ros
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+
 
 class ControlNode(Node):
 
@@ -29,9 +33,14 @@ class ControlNode(Node):
 
         # main loop timer
         self._loop_timer = self.create_timer(0.01, self.loop_cb)
+        self._tf_timer = self.create_timer(0.01, self.tf_cb)
         
         # variables
         self._markers = None    # store the MarkerArray
+        
+        # TF listener
+        self.buffer = Buffer()
+        self.listener = TransformListener(self.buffer, self)
 
     async def loop_cb(self):
         """ Main loop. """
@@ -41,6 +50,30 @@ class ControlNode(Node):
         # wait for user input
         # shoot
         return
+    
+    def tf_cd(self):
+        """ Listens to tf data to track April Tags. """
+        # TF listener
+        try:
+            # get the latest transform between left and right
+            # (rclpy.time.Time() means get the latest information)
+            tag_1 = self.buffer.lookup_transform("camera_link","tag_36h11.1",rclpy.time.Time())
+            self.t1_x = tag_1.transform.translation.x
+            self.t1_y = tag_1.transform.translation.y
+            self.t1_z = tag_1.transform.translation.z
+            self.t1_ox = tag_1.transform.rotation.x
+            self.t1_oy = tag_1.transform.rotation.y
+            self.t1_ow = tag_1.transform.rotation.w
+            self.t1_oz = tag_1.transform.rotation.z
+        except tf2_ros.LookupException as e:
+            # the frames don't exist yet
+            self.get_logger().debug(f"Lookup exception: {e}")
+        except tf2_ros.ConnectivityException as e:
+            # the tf tree has a disconnection
+            self.get_logger().debug(f"Connectivity exception: {e}")
+        except tf2_ros.ExtrapolationException as e:
+            # the times are two far apart to extrapolate
+            self.get_logger().debug(f"Extrapolation exception: {e}")
 
     def publish_markers(self):
         """ Pusblishes YOLO detections as Markers to visualize them in Rviz. """
