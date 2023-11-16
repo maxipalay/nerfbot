@@ -80,10 +80,10 @@ class MoveGun(Node):
         target.position.y = -self.scan_y
         target.position.z = self.scan_z
 
-        target.orientation.x = 1
-        target.orientation.y = 0
-        target.orientation.z = 0
-        target.orientation.w = 0
+        target.orientation.x = 1.0
+        target.orientation.y = 0.0
+        target.orientation.z = 0.0
+        target.orientation.w = 0.0
 
         await self.moveit_api.plan_and_execute(
                 self.moveit_api.plan_position_and_orientation,target)
