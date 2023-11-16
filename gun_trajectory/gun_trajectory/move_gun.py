@@ -6,6 +6,7 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import ReentrantCallbackGroup
 
 from geometry_msgs.msg import Point, Pose, Quaternion
+from std_srvs.srv import Empty
 
 from trajectory_interfaces.srv import Target
 
@@ -33,7 +34,9 @@ class MoveGun(Node):
             self.constraints_link)
 
         ### variables
-
+        self.scan_x = 0.30689
+        self.scan_y = 0.5
+        self.scan_z = 0.48688
 
         ### callback_groups
 
@@ -41,6 +44,7 @@ class MoveGun(Node):
 
         ### services
         self.shot = self.create_service(Target, '/shoot', self.shoot_SrvCallback)
+        self.gun_scan = self.create_service(Empty, '/gun_scan', self.gun_scan_callback)
 
         ### timer
 
@@ -65,6 +69,33 @@ class MoveGun(Node):
         await self.moveit_api.plan_and_execute(
                 self.moveit_api.plan_position_and_orientation, target)
         self.get_logger().info('Aimed at target')
+        return response
+    
+    async def gun_scan_callback(self, request, response):
+        self.get_logger().info("Starting scan")
+
+        # move arm to starting location
+        target = Pose()
+        target.position.x = self.scan_x
+        target.position.y = -self.scan_y
+        target.position.z = self.scan_z
+
+        target.orientation.x = 1
+        target.orientation.y = 0
+        target.orientation.z = 0
+        target.orientation.w = 0
+
+        await self.moveit_api.plan_and_execute(
+                self.moveit_api.plan_position_and_orientation,target)
+        
+        # move arm to ending location
+        target.position.x = self.scan_x
+        target.position.y = self.scan_y
+        target.position.z = self.scan_z
+
+        await self.moveit_api.plan_and_execute(
+                self.moveit_api.plan_position_and_orientation,target)
+        self.get_logger().info("Scan complete")
         return response
 
     def find_pose(self, x, y, z):
