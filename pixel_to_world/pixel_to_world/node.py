@@ -47,7 +47,7 @@ class DepthToWorld(Node):
             response.y = result[1]
             response.z = result[2]
             # this is just a visualization thing
-            img = cv2.circle(self._latest_color_img, (request.x,request.y), radius=5, color=(0, 0, 255), thickness=5)
+            img = cv2.circle(self._latest_color_img, (request.x,request.y), radius=5, color=(0,0,255), thickness=-1)
             img_msg = self.bridge.cv2_to_imgmsg(img)
             self.pub.publish(img_msg)
 
