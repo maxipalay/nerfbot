@@ -43,7 +43,7 @@ class Camera_subscriber(Node):
         self.pix_grade = None
         path = os.path.dirname(__file__)
         self.model = YOLO('/home/rahulroy/final_project/src/final/image_yolo/image_yolo/best.pt')
-        self.centroid=self.create_service(Empty,'cordinates',self.detect_pins)
+        self.centroid=self.create_service(Empty,'coordinates',self.detect_pins)
         self.yolov8_inference = Yolov8Inference()
         self._latest_depth_img = None
         self._latest_color_img=None
@@ -117,7 +117,7 @@ class Camera_subscriber(Node):
                             self.point_g.point.z = k[2] 
                             self.create_marker(self.point_g.point.x,self.point_g.point.y,self.point_g.point.z,self.green_count,'green')
                             self.green_count += 1
-                            
+
                     elif class_name == "blue_pins":
                         x3, y3, z3 = self.depth_world(centroid[0], centroid[1])  # Get x, y, z from depth_world function
                         blue_pins.append((x3, y3, z3))
