@@ -7,12 +7,23 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 import tf2_ros
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
+from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
+from geometry_msgs.msg import TransformStamped
 
 
 class ControlNode(Node):
 
     def __init__(self):
         super().__init__("control")
+        # Broadcast a camera frame
+        self.camera_broadcaster = StaticTransformBroadcaster(self)
+        cam_hand_tf = TransformStamped()
+        cam_hand_tf.header.stamp = self.get_clock().now().to_msg()
+        cam_hand_tf.header.frame_id = "panda_hand"
+        cam_hand_tf.child_frame_id = "camera_link"
+        cam_hand_tf.transform.translation.x = 0.05
+        cam_hand_tf.transform.translation.z = 0.065
+        self.camera_broadcaster.sendTransform(cam_hand_tf)  # publish transform
 
         markerQoS = QoSProfile(depth=10, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
         
