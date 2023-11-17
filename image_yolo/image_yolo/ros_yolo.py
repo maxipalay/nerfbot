@@ -55,6 +55,7 @@ class Camera_subscriber(Node):
         self.point_b = PointStamped()
         self.pub = self.create_publisher(msg_Image, "pixel_img", 10)
         self.marker_array = MarkerArray() 
+        self.red_count=0
 
         markerQoS = QoSProfile(
             depth=10, durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)
@@ -67,7 +68,7 @@ class Camera_subscriber(Node):
         yellow_pins = [] 
         green_pins =[]
         blue_pins=[] 
-        red_count = 0
+        
         yellow_count = 0
         green_count = 0
         blue_count = 0
@@ -87,12 +88,12 @@ class Camera_subscriber(Node):
                         for i in red_pins:
                             count=0
                             self.point_r.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
-                            self.point_r.header.frame_id = f"red_pins_{red_count}"
+                            self.point_r.header.frame_id = f"red_pins_{self.red_count}"
                             self.point_r.point.x = i[0]  # Set x, y, z coordinates
                             self.point_r.point.y = i[1]
                             self.point_r.point.z = i[2]  
-                            self.create_marker(self.point_r.point.x,self.point_r.point.y,self.point_r.point.z,red_count,'red')
-                            red_count += 1
+                            self.create_marker(self.point_r.point.x,self.point_r.point.y,self.point_r.point.z,self.red_count,'red')
+                            self.red_count += 1
                                      
                     elif class_name == "yellow_pins":
                         x1, y1, z1 = self.depth_world(centroid[0], centroid[1])  # Get x, y, z from depth_world function
@@ -129,7 +130,8 @@ class Camera_subscriber(Node):
                             blue_count += 1
                         print(blue_pins)
                         print(blue_count)
-                    self.pub2.publish(self.marker_array)
+            self.pub2.publish(self.marker_array)
+            self.marker_array= MarkerArray()
         return response
     
     def depth_world(self, x, y):
@@ -148,7 +150,7 @@ class Camera_subscriber(Node):
 
     def create_marker(self, x, y, z, count,ns):
         marker = Marker()
-        marker.header.frame_id = "camera_color_frame"
+        marker.header.frame_id = "camera_link"
         marker.header.stamp = self.get_clock().now().to_msg()
         marker.id = count
         marker.ns = ns
