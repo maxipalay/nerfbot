@@ -25,12 +25,12 @@ class ControlNode(Node):
         self._gun_client = self.create_client(Empty, 'gun_scan', callback_group=self._cbgrp)
         self._marker_pub = self.create_publisher(MarkerArray, "visualization_marker", markerQoS)
         
-        # wait for services to become available
-        while not self._input_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
+        # # wait for services to become available
+        # while not self._input_client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info('service not available, waiting again...')
         
-        while not self._vision_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
+        # while not self._vision_client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info('service not available, waiting again...')
 
         while not self._gun_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
@@ -41,7 +41,14 @@ class ControlNode(Node):
         
         # variables
         self._markers = None    # store the MarkerArray
-        
+        self.t1_x = None
+        self.t1_y = None
+        self.t1_z = None
+        self.t1_ox = None
+        self.t1_oy = None
+        self.t1_ow = None
+        self.t1_oz = None
+    
         # TF listener
         self.buffer = Buffer()
         self.listener = TransformListener(self.buffer, self)
@@ -51,13 +58,14 @@ class ControlNode(Node):
         # RUN ONCE!
         # scan targets
         # scan guns
-        
+        self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
+        self.get_logger().info("Tag 1 coordinates: ({},{},{})".format(self.t1_x,self.t1_y,self.t1_z))
 
         # wait for user input
         # shoot
         return
     
-    def tf_cd(self):
+    def tf_cb(self):
         """ Listens to tf data to track April Tags. """
         # TF listener
         try:
