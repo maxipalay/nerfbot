@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+
+    <node pkg="control" exec="control" />
+
+    <node pkg="gun_trajectory" exec="shoot"/>
+
+    <node pkg="apriltag_ros" exec="apriltag_node">
+        <param from="$(find-pkg-share control)/tags.yaml"/>
+        <remap from="camera_info" to="camera/color/camera_info"/>
+        <remap from="image_rect" to="camera/color/image_raw"/>
+    </node>
+
+</launch>
