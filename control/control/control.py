@@ -32,6 +32,9 @@ class ControlNode(Node):
         while not self._vision_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
 
+        while not self._gun_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+
         # main loop timer
         self._loop_timer = self.create_timer(0.01, self.loop_cb)
         self._tf_timer = self.create_timer(0.01, self.tf_cb)
