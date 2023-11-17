@@ -1,0 +1,11 @@
+
+path: /home/rahulroy/data  # dataset root dir
+train: images/images_test  # train images (relative to 'path')
+val: images/images_test  # val images (relative to 'path')
+
+# Classes
+names:
+  0: red_pins
+  1: yellow_pins
+  2: blue_pins
+  3: green_pins
