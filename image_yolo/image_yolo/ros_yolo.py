@@ -166,10 +166,26 @@ class Camera_subscriber(Node):
         marker.pose.orientation.y = 0.0
         marker.pose.orientation.z = 0.0
         marker.pose.orientation.w = 0.0
-        marker.color.r = 0.0
-        marker.color.g = 0.0
-        marker.color.b = 1.0
-        marker.color.a = 1.0
+        if ns=='red':
+            marker.color.r = 1.0
+            marker.color.g = 0.0
+            marker.color.b = 0.0
+            marker.color.a = 1.0
+        elif ns=='green':
+            marker.color.r = 0.0
+            marker.color.g = 1.0
+            marker.color.b = 0.0
+            marker.color.a = 1.0
+        elif ns=='blue':
+            marker.color.r = 0.0
+            marker.color.g = 0.0
+            marker.color.b = 1.0
+            marker.color.a = 1.0
+        elif ns=='yellow':
+            marker.color.r = 1.0
+            marker.color.g = 1.0
+            marker.color.b = 0.0
+            marker.color.a = 1.0
         self.marker_array.markers.append(marker)
           # Append the marker to the MarkerArray 
 
