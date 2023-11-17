@@ -9,7 +9,7 @@ from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 from geometry_msgs.msg import TransformStamped
-
+from trajectory_interfaces.srv import Target, TargetScanRequest
 
 class ControlNode(Node):
 
@@ -24,17 +24,15 @@ class ControlNode(Node):
         cam_hand_tf.transform.translation.x = 0.05
         cam_hand_tf.transform.translation.z = 0.065
         self.camera_broadcaster.sendTransform(cam_hand_tf)  # publish transform
-
-        markerQoS = QoSProfile(depth=10, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
         
         # Callback group
         self._cbgrp = ReentrantCallbackGroup()
 
         # clients and publishers
         self._input_client = self.create_client(Empty, 'input', callback_group = self._cbgrp)
-        self._vision_client = self.create_client(Empty, 'inference', callback_group = self._cbgrp)
+        self._vision_client = self.create_client(Empty, 'coordinates', callback_group = self._cbgrp)
+        self._targets_client = self.create_client(TargetScanRequest, 'target_scan', callback_group=self._cbgrp)
         self._gun_client = self.create_client(Empty, 'gun_scan', callback_group=self._cbgrp)
-        self._marker_pub = self.create_publisher(MarkerArray, "visualization_marker", markerQoS)
         
         # # wait for services to become available
         # while not self._input_client.wait_for_service(timeout_sec=1.0):
@@ -64,17 +62,23 @@ class ControlNode(Node):
         self.buffer = Buffer()
         self.listener = TransformListener(self.buffer, self)
 
+        # run once
+        self._run = False
+
     async def loop_cb(self):
         """ Main loop. """
-        # RUN ONCE!
-        # scan targets
-        # scan guns
-        self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
-        self.get_logger().info("Tag 1 coordinates: ({},{},{})".format(self.t1_x,self.t1_y,self.t1_z))
+        if not self._run:
+            self._run = True
+            # RUN ONCE!
+            # scan targets
+            await self.scan_targets()
+            # scan guns
+            # self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
+            # self.get_logger().info("Tag 1 coordinates: ({},{},{})".format(self.t1_x,self.t1_y,self.t1_z))
 
-        # wait for user input
-        # shoot
-        return
+            # wait for user input
+            # shoot
+            return
     
     def tf_cb(self):
         """ Listens to tf data to track April Tags. """
@@ -107,8 +111,17 @@ class ControlNode(Node):
         return
     
 
-    def scan_targets(self, ):
+    async def scan_targets(self):
         """ Moves the robot to scanning positions and requests for detections. """
+        # move robot to scan position
+        response = await self._targets_client.call_async(TargetScanRequest.Request())
+        # scan pins
+        await self._vision_client.call_async()
+        while response.more_scans:
+            # move robot to scan position
+            response = await self._targets_client.call_async(TargetScanRequest.Request())
+            # scan pins
+            await self._vision_client.call_async()
         return
 
 

@@ -8,7 +8,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from geometry_msgs.msg import Point, Pose, Quaternion
 from std_srvs.srv import Empty
 
-from trajectory_interfaces.srv import Target
+from trajectory_interfaces.srv import Target, TargetScanRequest
 
 from .moveit_api import MoveItAPI
 from .quaternion import *
@@ -45,6 +45,7 @@ class MoveGun(Node):
         ### services
         self.shot = self.create_service(Target, '/shoot', self.shoot_SrvCallback)
         self.gun_scan = self.create_service(Empty, '/gun_scan', self.gun_scan_callback)
+        self.target_scan = self.create_service(TargetScanRequest, '/target_scan', self.target_scan_callback)
 
         ### timer
 
@@ -52,7 +53,13 @@ class MoveGun(Node):
 
         ### subscribers
 
-        ### publisher 
+        ### publisher
+        self._scan_positions = [Pose(position=Point(x=0.5, y=0.0, z=0.3),
+                                     orientation=Quaternion(x=-0.7313537,y=0.6819984,z=0.0,w=0.0 )), 
+                                Pose(position=Point(x=0.5, y=0.0, z=0.3), 
+                                     orientation=Quaternion(x=-0.7313537,y=-0.6819984,z=0.0,w=0.0 ))]
+        self._scanning_targets = False
+        self._target_scan_index = 0
 
     async def shoot_SrvCallback(self, request, response):
         self.get_logger().info("Found target")
@@ -69,6 +76,28 @@ class MoveGun(Node):
         await self.moveit_api.plan_and_execute(
                 self.moveit_api.plan_position_and_orientation, target)
         self.get_logger().info('Aimed at target')
+        return response
+    
+    async def target_scan_callback(self, request, response):
+        # if we're not running a scan already
+        if not self._scanning_targets:
+            # set the scanning in progress flag
+            self._scanning_targets = True
+        # if we're running a scan and there are more points
+        if self._scanning_targets and self._target_scan_index < len(self._scan_positions):
+            # move to the next point
+            await self.moveit_api.plan_and_execute(
+                self.moveit_api.plan_position_and_orientation,self._scan_positions[self._target_scan_index])
+            # increase the index by one
+            self._target_scan_index += 1
+            # if the index has gone above all our points
+            if self._target_scan_index >= len(self._scan_positions):
+                response.more_scans = False
+                self._scanning_targets = False
+                self._target_scan_index = 0
+            else:
+                response.more_scans = True
+
         return response
     
     async def gun_scan_callback(self, request, response):
@@ -122,5 +151,6 @@ def entry_point(args=None):
 
     try:
         rclpy.spin(move_gun)
-    except:
+    except Exception as e:
+        print(str(e))
         pass
