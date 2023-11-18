@@ -3,12 +3,13 @@ from rclpy.node import Node
 from std_srvs.srv import Empty
 from visualization_msgs.msg import MarkerArray
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
-from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 import tf2_ros
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import TransformStamped, Quaternion
 from trajectory_interfaces.srv import Target, TargetScanRequest
 
 class ControlNode(Node):
@@ -23,10 +24,18 @@ class ControlNode(Node):
         self._cam_hand_tf.child_frame_id = "camera_link"
         self._cam_hand_tf.transform.translation.x = 0.05
         self._cam_hand_tf.transform.translation.z = 0.065
+        self._cam_hand_tf.transform.rotation = Quaternion(
+            x = 0.707, 
+            y = 0.0, 
+            z = 0.707, 
+            w = 0.0
+        )
         self.camera_broadcaster.sendTransform(self._cam_hand_tf)  # publish transform
         
         # Callback group
         self._cbgrp = ReentrantCallbackGroup()
+        self.loop_cbgrp = MutuallyExclusiveCallbackGroup()
+        self.tf_cbgrp = MutuallyExclusiveCallbackGroup()
 
         # clients and publishers
         self._input_client = self.create_client(Empty, 'input', callback_group = self._cbgrp)
@@ -45,8 +54,8 @@ class ControlNode(Node):
             self.get_logger().info('service not available, waiting again...')
 
         # main loop timer
-        self._loop_timer = self.create_timer(0.01, self.loop_cb)
-        self._tf_timer = self.create_timer(0.01, self.tf_cb)
+        self._loop_timer = self.create_timer(0.01, self.loop_cb, callback_group=self.loop_cbgrp)
+        self._tf_timer = self.create_timer(0.01, self.tf_cb, callback_group=self.tf_cbgrp)
         
         # variables
         self._markers = None    # store the MarkerArray
@@ -67,6 +76,7 @@ class ControlNode(Node):
 
     async def loop_cb(self):
         """ Main loop. """
+
         if not self._run:
             self._run = True
             # RUN ONCE!
@@ -74,7 +84,7 @@ class ControlNode(Node):
             await self.scan_targets()
             # scan guns
             self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
-            self.get_logger().info("Tag 1 coordinates: ({},{},{})".format(self.t1_x,self.t1_y,self.t1_z))
+            self.get_logger().info(f"Tag 1 coordinates: ({self.t1_x},{self.t1_y},{self.t1_z})")
 
             # wait for user input
             # shoot
@@ -114,17 +124,19 @@ class ControlNode(Node):
     async def scan_targets(self):
         """ Moves the robot to scanning positions and requests for detections. """
         # move robot to scan position
-        response = await self._targets_client.call_async(TargetScanRequest.Request())
         self.get_logger().info("position 1")
+        response = await self._targets_client.call_async(TargetScanRequest.Request())
         # scan pins
         self.get_logger().info("requesting camera scan...")
         #await self._vision_client.call_async(Empty.Request())
         self.get_logger().info("camera scan complete")
+        count = 2
         while response.more_scans:
 
             # move robot to scan position
+            self.get_logger().info(f"position {count}")
             response = await self._targets_client.call_async(TargetScanRequest.Request())
-            self.get_logger().info("position X")
+            count += 1
             # scan pins
             self.get_logger().info("requesting camera scan...")
             #await self._vision_client.call_async(Empty.Request())
@@ -135,8 +147,10 @@ class ControlNode(Node):
 def main():
     rclpy.init()
     node = ControlNode()
-    rclpy.spin(node)
-    rclpy.shutdown()
+    executor = MultiThreadedExecutor()
+    executor.add_node(node)
+    executor.spin()
+
 
 if __name__ == "__main__":
     main()
