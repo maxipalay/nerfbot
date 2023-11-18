@@ -32,7 +32,7 @@ class Camera_subscriber(Node):
         super().__init__('camera_subscriber')
         self.bridge = CvBridge()
         # self.sub = self.create_subscription(msg_Image, '/camera/color/image_raw', self.camera_callback, 1)
-        self._depth_image_topic = '/camera/depth/image_rect_raw'
+        self._depth_image_topic = 'camera/aligned_depth_to_color/image_raw'#'/camera/depth/image_rect_raw'
         self._depth_info_topic = '/camera/depth/camera_info'
         self.sub_depth = self.create_subscription(msg_Image, self._depth_image_topic, self.imageDepthCallback, 1)
         self.sub_info = self.create_subscription(CameraInfo, self._depth_info_topic, self.imageDepthInfoCallback, 1)
@@ -84,13 +84,14 @@ class Camera_subscriber(Node):
                 if class_name != "not_pins":  # Exclude class "not_pins"
                     if class_name == "red_pins":
                         x, y, z = self.depth_world(centroid[0], centroid[1])  # Get x, y, z from depth_world function
+                        self.get_logger().info(f"{x},{y},{z}")
                         red_pins.append((x, y, z)) 
                         for i in red_pins:
                             self.point_r.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_r.header.frame_id = f"red_pins_{self.red_count}"
-                            self.point_r.point.x = i[0]  # Set x, y, z coordinates
-                            self.point_r.point.y = i[1]
-                            self.point_r.point.z = i[2]  
+                            self.point_r.point.x = i[2]#i[0]  # Set x, y, z coordinates
+                            self.point_r.point.y = -i[0]#i[1]
+                            self.point_r.point.z = -i[1]#i[2]  
                             self.create_marker(self.point_r.point.x,self.point_r.point.y,self.point_r.point.z,self.red_count,'red')
                             self.red_count += 1
 
@@ -100,9 +101,9 @@ class Camera_subscriber(Node):
                         for j in yellow_pins:
                             self.point_y.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_y.header.frame_id = f"yellow_pins_{self.yellow_count}" 
-                            self.point_y.point.x = j[0]  # Set x, y, z coordinates
-                            self.point_y.point.y = j[1]
-                            self.point_y.point.z = j[2]
+                            self.point_y.point.x = j[2]#j[0]  # Set x, y, z coordinates
+                            self.point_y.point.y = -j[0]#j[1]
+                            self.point_y.point.z = -j[1]#j[2]
                             self.create_marker(self.point_y.point.x,self.point_y.point.y,self.point_y.point.z,self.yellow_count,'yellow')
                             self.yellow_count += 1
 
@@ -112,9 +113,9 @@ class Camera_subscriber(Node):
                         for k in green_pins:
                             self.point_g.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_g.header.frame_id = f"green_pins_{self.green_count}"
-                            self.point_g.point.x = k[0]  # Set x, y, z coordinates
-                            self.point_g.point.y = k[1]
-                            self.point_g.point.z = k[2] 
+                            self.point_g.point.x = k[2]#k[0]  # Set x, y, z coordinates
+                            self.point_g.point.y = -k[0]#k[1]
+                            self.point_g.point.z = -k[1]#k[2] 
                             self.create_marker(self.point_g.point.x,self.point_g.point.y,self.point_g.point.z,self.green_count,'green')
                             self.green_count += 1
 
@@ -124,9 +125,9 @@ class Camera_subscriber(Node):
                         for l in blue_pins:
                             self.point_b.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_b.header.frame_id = f"blue_pins_{self.blue_count}" 
-                            self.point_b.point.x = l[0]  # Set x, y, z coordinates
-                            self.point_b.point.y = l[1]
-                            self.point_b.point.z = l[2] 
+                            self.point_b.point.x = l[2]#l[0]  # Set x, y, z coordinates
+                            self.point_b.point.y = -l[0]#l[1]
+                            self.point_b.point.z = -l[1]#l[2] 
                             self.create_marker(self.point_b.point.x,self.point_b.point.y,self.point_b.point.z,self.blue_count,'blue')
                             self.blue_count += 1
                         
@@ -142,7 +143,7 @@ class Camera_subscriber(Node):
             depth_y = int(y)
             depth = self._latest_depth_img[depth_x, depth_y]
 
-            result = rs2.rs2_deproject_pixel_to_point(self.intrinsics, [x, y], depth)
+            result = rs2.rs2_deproject_pixel_to_point(self.intrinsics, [y, x], depth)
             x_new, y_new, z_new = result[0], result[1], result[2]
             
             return x_new, y_new, z_new
