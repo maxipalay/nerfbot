@@ -54,10 +54,20 @@ class MoveGun(Node):
         ### subscribers
 
         ### publisher
-        self._scan_positions = [Pose(position=Point(x=0.5, y=0.0, z=0.3),
-                                     orientation=Quaternion(x=-0.7313537,y=0.6819984,z=0.0,w=0.0 )), 
-                                Pose(position=Point(x=0.5, y=0.0, z=0.3), 
-                                     orientation=Quaternion(x=-0.7313537,y=-0.6819984,z=0.0,w=0.0 ))]
+
+        # pin scanning stuff
+        # base EE orientation for the pin scanning pose, x=-180deg, y=60deg
+        base_orientation = Quaternion(x=-0.8660254, y=0.0, z=-0.5, w=0.0)
+        # rotation around x axis 45 degrees
+        rot_1 = Quaternion(x=0.3826834, y=0.0, z=0.0, w=0.9238795)
+        # rotation around x axis -45 degrees
+        rot_2 = Quaternion(x=-0.3826834, y=0.0, z=0.0, w=0.9238795)
+
+        self._scan_positions = [Pose(position=Point(x=0.5, y=0.0, z=0.6),
+                                     orientation=quaternion_multiply(base_orientation, rot_1)), 
+                                Pose(position=Point(x=0.5, y=0.0, z=0.6), 
+                                     orientation=quaternion_multiply(base_orientation, rot_2))]
+        
         self._scanning_targets = False
         self._target_scan_index = 0
 

@@ -17,13 +17,13 @@ class ControlNode(Node):
         super().__init__("control")
         # Broadcast a camera frame
         self.camera_broadcaster = StaticTransformBroadcaster(self)
-        cam_hand_tf = TransformStamped()
-        cam_hand_tf.header.stamp = self.get_clock().now().to_msg()
-        cam_hand_tf.header.frame_id = "panda_hand"
-        cam_hand_tf.child_frame_id = "camera_link"
-        cam_hand_tf.transform.translation.x = 0.05
-        cam_hand_tf.transform.translation.z = 0.065
-        self.camera_broadcaster.sendTransform(cam_hand_tf)  # publish transform
+        self._cam_hand_tf = TransformStamped()
+        self._cam_hand_tf.header.stamp = self.get_clock().now().to_msg()
+        self._cam_hand_tf.header.frame_id = "panda_hand"
+        self._cam_hand_tf.child_frame_id = "camera_link"
+        self._cam_hand_tf.transform.translation.x = 0.05
+        self._cam_hand_tf.transform.translation.z = 0.065
+        self.camera_broadcaster.sendTransform(self._cam_hand_tf)  # publish transform
         
         # Callback group
         self._cbgrp = ReentrantCallbackGroup()
@@ -115,13 +115,20 @@ class ControlNode(Node):
         """ Moves the robot to scanning positions and requests for detections. """
         # move robot to scan position
         response = await self._targets_client.call_async(TargetScanRequest.Request())
+        self.get_logger().info("position 1")
         # scan pins
-        await self._vision_client.call_async()
+        self.get_logger().info("requesting camera scan...")
+        #await self._vision_client.call_async(Empty.Request())
+        self.get_logger().info("camera scan complete")
         while response.more_scans:
+
             # move robot to scan position
             response = await self._targets_client.call_async(TargetScanRequest.Request())
+            self.get_logger().info("position X")
             # scan pins
-            await self._vision_client.call_async()
+            self.get_logger().info("requesting camera scan...")
+            #await self._vision_client.call_async(Empty.Request())
+            self.get_logger().info("camera scan complete")
         return
 
 

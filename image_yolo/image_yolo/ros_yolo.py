@@ -42,7 +42,7 @@ class Camera_subscriber(Node):
         self.pix = None
         self.pix_grade = None
         path = os.path.dirname(__file__)
-        self.model = YOLO('/home/rahulroy/final_project/src/final/image_yolo/image_yolo/best.pt')
+        self.model = YOLO('/home/max/courses/495_Embedded_Systems/ws/final_project/src/final-project-group2/image_yolo/image_yolo/best.pt')
         self.centroid=self.create_service(Empty,'coordinates',self.detect_pins)
         self.yolov8_inference = Yolov8Inference()
         self._latest_depth_img = None
