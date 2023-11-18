@@ -96,6 +96,7 @@ class MoveGun(Node):
         # if we're running a scan and there are more points
         if self._scanning_targets and self._target_scan_index < len(self._scan_positions):
             # move to the next point
+            self.get_logger().info(str(self._scan_positions[self._target_scan_index]))
             await self.moveit_api.plan_and_execute(
                 self.moveit_api.plan_position_and_orientation,self._scan_positions[self._target_scan_index])
             # increase the index by one
