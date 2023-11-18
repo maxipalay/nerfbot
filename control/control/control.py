@@ -128,7 +128,7 @@ class ControlNode(Node):
         response = await self._targets_client.call_async(TargetScanRequest.Request())
         # scan pins
         self.get_logger().info("requesting camera scan...")
-        #await self._vision_client.call_async(Empty.Request())
+        await self._vision_client.call_async(Empty.Request())
         self.get_logger().info("camera scan complete")
         count = 2
         while response.more_scans:
@@ -139,7 +139,7 @@ class ControlNode(Node):
             count += 1
             # scan pins
             self.get_logger().info("requesting camera scan...")
-            #await self._vision_client.call_async(Empty.Request())
+            await self._vision_client.call_async(Empty.Request())
             self.get_logger().info("camera scan complete")
         return
 
