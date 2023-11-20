@@ -12,8 +12,8 @@ from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 from geometry_msgs.msg import TransformStamped, Quaternion
 from trajectory_interfaces.srv import Target, TargetScanRequest
 
-class ControlNode(Node):
 
+class ControlNode(Node):
     def __init__(self):
         super().__init__("control")
         # Broadcast a camera frame
@@ -25,40 +25,49 @@ class ControlNode(Node):
         self._cam_hand_tf.transform.translation.x = 0.05
         self._cam_hand_tf.transform.translation.z = 0.065
         self._cam_hand_tf.transform.rotation = Quaternion(
-            x = 0.707, 
-            y = 0.0, 
-            z = 0.707, 
-            w = 0.0
+            x=0.707, y=0.0, z=0.707, w=0.0
         )
         self.camera_broadcaster.sendTransform(self._cam_hand_tf)  # publish transform
-        
+
         # Callback group
         self._cbgrp = ReentrantCallbackGroup()
         self.loop_cbgrp = MutuallyExclusiveCallbackGroup()
         self.tf_cbgrp = MutuallyExclusiveCallbackGroup()
 
         # clients and publishers
-        self._input_client = self.create_client(Empty, 'input', callback_group = self._cbgrp)
-        self._vision_client = self.create_client(Empty, 'coordinates', callback_group = self._cbgrp)
-        self._targets_client = self.create_client(TargetScanRequest, 'target_scan', callback_group=self._cbgrp)
-        self._gun_client = self.create_client(Empty, 'gun_scan', callback_group=self._cbgrp)
-        
+        self._input_client = self.create_client(
+            Empty, "input", callback_group=self._cbgrp
+        )
+        self._vision_client = self.create_client(
+            Empty, "coordinates", callback_group=self._cbgrp
+        )
+        self._targets_client = self.create_client(
+            TargetScanRequest, "target_scan", callback_group=self._cbgrp
+        )
+        self._gun_client = self.create_client(
+            Empty, "gun_scan", callback_group=self._cbgrp
+        )
+
         # # wait for services to become available
         # while not self._input_client.wait_for_service(timeout_sec=1.0):
         #     self.get_logger().info('service not available, waiting again...')
-        
+
         # while not self._vision_client.wait_for_service(timeout_sec=1.0):
         #     self.get_logger().info('service not available, waiting again...')
 
         while not self._gun_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
+            self.get_logger().info("service not available, waiting again...")
 
         # main loop timer
-        self._loop_timer = self.create_timer(0.01, self.loop_cb, callback_group=self.loop_cbgrp)
-        self._tf_timer = self.create_timer(0.01, self.tf_cb, callback_group=self.tf_cbgrp)
-        
+        self._loop_timer = self.create_timer(
+            0.01, self.loop_cb, callback_group=self.loop_cbgrp
+        )
+        self._tf_timer = self.create_timer(
+            0.01, self.tf_cb, callback_group=self.tf_cbgrp
+        )
+
         # variables
-        self._markers = None    # store the MarkerArray
+        self._markers = None  # store the MarkerArray
         self.t1_x = None
         self.t1_y = None
         self.t1_z = None
@@ -66,7 +75,7 @@ class ControlNode(Node):
         self.t1_oy = None
         self.t1_ow = None
         self.t1_oz = None
-    
+
         # TF listener
         self.buffer = Buffer()
         self.listener = TransformListener(self.buffer, self)
@@ -75,28 +84,30 @@ class ControlNode(Node):
         self._run = False
 
     async def loop_cb(self):
-        """ Main loop. """
+        """Main loop."""
 
         if not self._run:
             self._run = True
             # RUN ONCE!
             # scan targets
             await self.scan_targets()
-            # scan guns
-            self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
-            self.get_logger().info(f"Tag 1 coordinates: ({self.t1_x},{self.t1_y},{self.t1_z})")
+            ## scan guns
+            # self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
+            # self.get_logger().info(f"Tag 1 coordinates: ({self.t1_x},{self.t1_y},{self.t1_z})")
 
             # wait for user input
             # shoot
             return
-    
+
     def tf_cb(self):
-        """ Listens to tf data to track April Tags. """
+        """Listens to tf data to track April Tags."""
         # TF listener
         try:
             # get the latest transform between left and right
             # (rclpy.time.Time() means get the latest information)
-            tag_1 = self.buffer.lookup_transform("camera_link","tag36h11:1",rclpy.time.Time())
+            tag_1 = self.buffer.lookup_transform(
+                "camera_link", "tag36h11:1", rclpy.time.Time()
+            )
             self.t1_x = tag_1.transform.translation.x
             self.t1_y = tag_1.transform.translation.y
             self.t1_z = tag_1.transform.translation.z
@@ -115,14 +126,13 @@ class ControlNode(Node):
             self.get_logger().debug(f"Extrapolation exception: {e}")
 
     def publish_markers(self):
-        """ Pusblishes YOLO detections as Markers to visualize them in Rviz. """
+        """Pusblishes YOLO detections as Markers to visualize them in Rviz."""
         self._marker_pub.publish(self._markers)
 
         return
-    
 
     async def scan_targets(self):
-        """ Moves the robot to scanning positions and requests for detections. """
+        """Moves the robot to scanning positions and requests for detections."""
         # move robot to scan position
         self.get_logger().info("position 1")
         response = await self._targets_client.call_async(TargetScanRequest.Request())
@@ -132,10 +142,11 @@ class ControlNode(Node):
         self.get_logger().info("camera scan complete")
         count = 2
         while response.more_scans:
-
             # move robot to scan position
             self.get_logger().info(f"position {count}")
-            response = await self._targets_client.call_async(TargetScanRequest.Request())
+            response = await self._targets_client.call_async(
+                TargetScanRequest.Request()
+            )
             count += 1
             # scan pins
             self.get_logger().info("requesting camera scan...")
