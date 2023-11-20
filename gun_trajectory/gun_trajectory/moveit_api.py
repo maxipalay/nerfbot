@@ -73,9 +73,9 @@ class MoveItAPI():
         self._node._action_client.wait_for_server()
 
     async def move_gripper(self, width: float,
-                           speed: float = 0.5, force: float = 10) -> (bool, Grasp.Result()):
+                           speed: float = 0.5, force: float = 10.0) -> (bool, Grasp.Result()):
         """Move the gripper to a specified position."""
-        req = Grasp()
+        req = Grasp.Goal()
         req.width = width
         req.speed = speed
         req.force = force
@@ -84,7 +84,7 @@ class MoveItAPI():
 
         result = await future.get_result_async()
 
-        if result.result.reached_goal:
+        if result.result.success:
             return True, result.result
 
         return False, result.result

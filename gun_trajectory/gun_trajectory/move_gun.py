@@ -81,7 +81,7 @@ class MoveGun(Node):
         self._target_scan_index = 0
 
     async def grip(self):
-        await self.moveit_api.move_gripper(0.025, 0.05, 10)
+        await self.moveit_api.move_gripper(0.025, 0.05, 10.0)
 
     async def shoot_SrvCallback(self, request, response):
         self.get_logger().info("Found target")
