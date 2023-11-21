@@ -8,7 +8,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from geometry_msgs.msg import Point, Pose, Quaternion
 from std_srvs.srv import Empty
 
-from trajectory_interfaces.srv import Target, TargetScanRequest
+from trajectory_interfaces.srv import Grab, Target, TargetScanRequest
 
 from .moveit_api import MoveItAPI
 from .quaternion import *
@@ -39,7 +39,7 @@ class MoveGun(Node):
         self.scan_y = 0.5
         self.scan_z = 0.48688
 
-        self.tag_offset = np.array([-0.028,0.0,-0.001])  # position of end
+        self.tag_offset = np.array([0.028,0.0,0.001])  # position of end
                                                     # effector relative to tag
 
         ### callback_groups
@@ -52,6 +52,7 @@ class MoveGun(Node):
         self.target_scan = self.create_service(
             TargetScanRequest, "/target_scan", self.target_scan_callback
         )
+        self.grab_gun = self.create_service(Grab, "/grab", self.grab_gun_callback)
 
         ### timer
 
@@ -101,19 +102,23 @@ class MoveGun(Node):
         self.get_logger().info("Aimed at target")
         return response
     
-    async def grab_gun(self, request, response):
+    async def grab_gun_callback(self, request, response):
         self.get_logger().info("Initiated grab")
         
         # move arm to starting location
         target = Pose()
-        target.position.x = request.position.x + self.tag_offset[0]
-        target.position.y = request.position.y + self.tag_offset[1]
-        target.position.z = request.position.z + self.tag_offset[2]
+        # target.position.x = request.pose.position.x + self.tag_offset[0]
+        # target.position.y = request.pose.position.y + self.tag_offset[1]
+        # target.position.z = request.pose.position.z + self.tag_offset[2]
 
-        target.orientation.x = request.orientation.x
-        target.orientation.y = request.orientation.y
-        target.orientation.z = request.orientation.z
-        target.orientation.w = request.orientation.w
+        target.position.x = request.pose.position.x
+        target.position.y = request.pose.position.y
+        target.position.z = request.pose.position.z
+
+        target.orientation.x = request.pose.orientation.x
+        target.orientation.y = request.pose.orientation.y
+        target.orientation.z = request.pose.orientation.z
+        target.orientation.w = request.pose.orientation.w
 
         await self.moveit_api.plan_and_execute(
             self.moveit_api.plan_position_and_orientation, target

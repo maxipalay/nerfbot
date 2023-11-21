@@ -61,8 +61,8 @@ class ControlNode(Node):
         # while not self._gun_client.wait_for_service(timeout_sec=1.0):
         #     self.get_logger().info("service not available, waiting again...")
 
-        # while not self._grab_client.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info("service not available, waiting again...")
+        while not self._grab_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info("grab service not available, waiting again...")
 
         # main loop timer
         self._loop_timer = self.create_timer(
@@ -105,6 +105,7 @@ class ControlNode(Node):
             # wait for user input
 
             # grab gun
+            # self.get_logger().info(f"{self.t1}")
             self._grab_future = await self._grab_client.call_async(Grab.Request(Grab=self.t1))
 
             # shoot
@@ -117,7 +118,7 @@ class ControlNode(Node):
             # get the latest transform between left and right
             # (rclpy.time.Time() means get the latest information)
             tag_1 = self.buffer.lookup_transform(
-                "camera_link", "tag36h11:1", rclpy.time.Time()
+                "panda_link0", "tag36h11:1", rclpy.time.Time()
             )
             self.t1.position.x = tag_1.transform.translation.x
             self.t1.position.y = tag_1.transform.translation.y
