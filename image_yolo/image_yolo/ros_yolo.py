@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
+""" Offers a service to detect pins and publish them as markers
+    
+    PUBLISHERS:
+      visualization_marker_array (MarkerArray/visualization_msgs.msg) - publishes marker arrays
 
+    SERVICES:
+      coordinates (Empty/std_srvs.srv) - detect pins
+"""
 from ultralytics import YOLO
 import rclpy
 from rclpy.node import Node
@@ -15,19 +22,12 @@ import os
 import numpy as np
 from geometry_msgs.msg import PointStamped
 import pyrealsense2 as rs2
-
 if (not hasattr(rs2, 'intrinsics')):
     import pyrealsense2.pyrealsense2 as rs2
 import os
 
-
-
-from yolov8_msgs.msg import InferenceResult
-from yolov8_msgs.msg import Yolov8Inference
-
-bridge = CvBridge()
-
 class Camera_subscriber(Node):
+    """Detects bolwing pins and publishes markers of their coordinates in rviz"""
     def __init__(self):
         super().__init__('camera_subscriber')
         self.bridge = CvBridge()
@@ -36,7 +36,6 @@ class Camera_subscriber(Node):
         self._depth_info_topic = '/camera/depth/camera_info'
         self.sub_depth = self.create_subscription(msg_Image, self._depth_image_topic, self.imageDepthCallback, 1)
         self.sub_info = self.create_subscription(CameraInfo, self._depth_info_topic, self.imageDepthInfoCallback, 1)
-
         self.sub1 = self.create_subscription(msg_Image, '/camera/color/image_raw', self.get_latest_frame, 1)
         self.intrinsics = None
         self.pix = None
@@ -44,22 +43,17 @@ class Camera_subscriber(Node):
         path = os.path.dirname(__file__)
         self.model = YOLO('/home/rahulroy/final_project/src/final/image_yolo/image_yolo/best.pt')
         self.centroid=self.create_service(Empty,'coordinates',self.detect_pins)
-        self.yolov8_inference = Yolov8Inference()
         self._latest_depth_img = None
         self._latest_color_img=None
-        self.yolov8_pub = self.create_publisher(Yolov8Inference, "/Yolov8_Inference", 1)
-        self.img_pub = self.create_publisher(msg_Image, "/inference_result", 1)
         self.point_r = PointStamped()
         self.point_y = PointStamped()
         self.point_g = PointStamped()
         self.point_b = PointStamped()
-        self.pub = self.create_publisher(msg_Image, "pixel_img", 10)
         self.marker_array = MarkerArray() 
         self.red_count=0
         self.blue_count=0
         self.green_count=0
         self.yellow_count=0
-
         markerQoS = QoSProfile(
             depth=10, durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)
         self.pub2 = self.create_publisher(
@@ -67,6 +61,8 @@ class Camera_subscriber(Node):
 
 
     def detect_pins(self, request, response):
+        """Detects pins using yolo and gives world frame coordinates"""
+
         red_pins = []  # List to store centroids of red pins
         yellow_pins = [] 
         green_pins =[]
@@ -136,6 +132,18 @@ class Camera_subscriber(Node):
         return response
     
     def depth_world(self, x, y):
+        """
+           Converts pixel coordinates to depth coordinates(x,y,z)
+        
+            Args:
+            -----
+                x (float): Pixel coordinate in X axis
+                y (float): Pixel coordinate in Y axis
+        
+            Returns:
+            --------
+                float: The world frame coorsinates x,y and z
+        """
         if self.intrinsics and self._latest_depth_img is not None and self._latest_color_img is not None:
             self.get_logger().info("processing request")
             
@@ -150,6 +158,21 @@ class Camera_subscriber(Node):
 
 
     def create_marker(self, x, y, z, count,ns):
+        """
+           Creates a marker for each pin deteted and stores them in an array
+        
+            Args:
+            -----
+                x (float): World X coordinate
+                y (float): World Y coordinate
+                z (float): World Z coordinate
+                count (int): Pin counter
+                ns (string): namespace
+        
+            Returns:
+            --------
+                marker_array: Marker array
+        """
         marker = Marker()
         marker.header.frame_id = "camera_link"
         marker.header.stamp = self.get_clock().now().to_msg()
@@ -191,6 +214,7 @@ class Camera_subscriber(Node):
           # Append the marker to the MarkerArray 
 
     def get_latest_frame(self,data):
+        """Gets the lastest frame when service is called."""
         # Wait for a new frame from the RealSense camera
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, 'bgr8')
@@ -203,6 +227,7 @@ class Camera_subscriber(Node):
              
      
     def imageDepthInfoCallback(self, cameraInfo):
+        """Information about Depth Camera intrinsics"""
         try:
             if self.intrinsics:
                 return
@@ -221,7 +246,9 @@ class Camera_subscriber(Node):
         except CvBridgeError as e:
             print(e)
             return
+        
     def imageDepthCallback(self, data):
+        """Converts image data to cv data"""
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, data.encoding)
             self._latest_depth_img = cv_image
@@ -233,6 +260,7 @@ class Camera_subscriber(Node):
 
 
 def main(args=None):
+    """Main execution point of program"""
     rclpy.init(args=args)
     node = Camera_subscriber()
     rclpy.spin(node)
