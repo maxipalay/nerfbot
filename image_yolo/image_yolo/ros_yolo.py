@@ -21,10 +21,6 @@ if (not hasattr(rs2, 'intrinsics')):
 import os
 
 
-
-from yolov8_msgs.msg import InferenceResult
-from yolov8_msgs.msg import Yolov8Inference
-
 bridge = CvBridge()
 
 class Camera_subscriber(Node):
@@ -44,10 +40,8 @@ class Camera_subscriber(Node):
         path = os.path.dirname(__file__)
         self.model = YOLO('/home/max/courses/495_Embedded_Systems/ws/final_project/src/final-project-group2/image_yolo/image_yolo/best.pt')
         self.centroid=self.create_service(Empty,'coordinates',self.detect_pins)
-        self.yolov8_inference = Yolov8Inference()
         self._latest_depth_img = None
         self._latest_color_img=None
-        self.yolov8_pub = self.create_publisher(Yolov8Inference, "/Yolov8_Inference", 1)
         self.img_pub = self.create_publisher(msg_Image, "/inference_result", 1)
         self.point_r = PointStamped()
         self.point_y = PointStamped()
