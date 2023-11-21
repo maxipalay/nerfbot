@@ -99,8 +99,8 @@ class MoveGun(Node):
         return response
 
     async def target_scan_callback(self, request, response):
-        await self.grip()
-        return response
+        # await self.grip()
+        # return response
         # if we're not running a scan already
         if not self._scanning_targets:
             # set the scanning in progress flag
