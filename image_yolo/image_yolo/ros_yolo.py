@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-""" Offers a service to detect pins and publish them as markers
-    
-    PUBLISHERS:
-      visualization_marker_array (MarkerArray/visualization_msgs.msg) - publishes marker arrays
 
-    SERVICES:
-      coordinates (Empty/std_srvs.srv) - detect pins
-"""
 from ultralytics import YOLO
 import rclpy
 from rclpy.node import Node
@@ -22,19 +15,28 @@ import os
 import numpy as np
 from geometry_msgs.msg import PointStamped
 import pyrealsense2 as rs2
+
 if (not hasattr(rs2, 'intrinsics')):
     import pyrealsense2.pyrealsense2 as rs2
 import os
 
+
+
+from yolov8_msgs.msg import InferenceResult
+from yolov8_msgs.msg import Yolov8Inference
+
+bridge = CvBridge()
+
 class Camera_subscriber(Node):
-    """Detects bolwing pins and publishes markers of their coordinates in rviz"""
     def __init__(self):
         super().__init__('camera_subscriber')
         self.bridge = CvBridge()
-        self._depth_image_topic = '/camera/depth/image_rect_raw'
+        # self.sub = self.create_subscription(msg_Image, '/camera/color/image_raw', self.camera_callback, 1)
+        self._depth_image_topic = 'camera/aligned_depth_to_color/image_raw'#'/camera/depth/image_rect_raw'
         self._depth_info_topic = '/camera/depth/camera_info'
         self.sub_depth = self.create_subscription(msg_Image, self._depth_image_topic, self.imageDepthCallback, 1)
         self.sub_info = self.create_subscription(CameraInfo, self._depth_info_topic, self.imageDepthInfoCallback, 1)
+
         self.sub1 = self.create_subscription(msg_Image, '/camera/color/image_raw', self.get_latest_frame, 1)
         self.intrinsics = None
         self.pix = None
@@ -42,17 +44,22 @@ class Camera_subscriber(Node):
         path = os.path.dirname(__file__)
         self.model = YOLO('/home/rahulroy/final_project/src/final/image_yolo/image_yolo/best.pt')
         self.centroid=self.create_service(Empty,'coordinates',self.detect_pins)
+        self.yolov8_inference = Yolov8Inference()
         self._latest_depth_img = None
         self._latest_color_img=None
+        self.yolov8_pub = self.create_publisher(Yolov8Inference, "/Yolov8_Inference", 1)
+        self.img_pub = self.create_publisher(msg_Image, "/inference_result", 1)
         self.point_r = PointStamped()
         self.point_y = PointStamped()
         self.point_g = PointStamped()
         self.point_b = PointStamped()
+        self.pub = self.create_publisher(msg_Image, "pixel_img", 10)
         self.marker_array = MarkerArray() 
         self.red_count=0
         self.blue_count=0
         self.green_count=0
         self.yellow_count=0
+
         markerQoS = QoSProfile(
             depth=10, durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)
         self.pub2 = self.create_publisher(
@@ -60,8 +67,6 @@ class Camera_subscriber(Node):
 
 
     def detect_pins(self, request, response):
-        """Detects pins using yolo and gives world frame coordinates"""
-
         red_pins = []  # List to store centroids of red pins
         yellow_pins = [] 
         green_pins =[]
@@ -79,13 +84,14 @@ class Camera_subscriber(Node):
                 if class_name != "not_pins":  # Exclude class "not_pins"
                     if class_name == "red_pins":
                         x, y, z = self.depth_world(centroid[0], centroid[1])  # Get x, y, z from depth_world function
+                        self.get_logger().info(f"{x},{y},{z}")
                         red_pins.append((x, y, z)) 
                         for i in red_pins:
                             self.point_r.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_r.header.frame_id = f"red_pins_{self.red_count}"
-                            self.point_r.point.x = i[0]  # Set x, y, z coordinates
-                            self.point_r.point.y = i[1]
-                            self.point_r.point.z = i[2]  
+                            self.point_r.point.x = i[2]#i[0]  # Set x, y, z coordinates
+                            self.point_r.point.y = -i[0]#i[1]
+                            self.point_r.point.z = -i[1]#i[2]  
                             self.create_marker(self.point_r.point.x,self.point_r.point.y,self.point_r.point.z,self.red_count,'red')
                             self.red_count += 1
 
@@ -95,9 +101,9 @@ class Camera_subscriber(Node):
                         for j in yellow_pins:
                             self.point_y.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_y.header.frame_id = f"yellow_pins_{self.yellow_count}" 
-                            self.point_y.point.x = j[0]  # Set x, y, z coordinates
-                            self.point_y.point.y = j[1]
-                            self.point_y.point.z = j[2]
+                            self.point_y.point.x = j[2]#j[0]  # Set x, y, z coordinates
+                            self.point_y.point.y = -j[0]#j[1]
+                            self.point_y.point.z = -j[1]#j[2]
                             self.create_marker(self.point_y.point.x,self.point_y.point.y,self.point_y.point.z,self.yellow_count,'yellow')
                             self.yellow_count += 1
 
@@ -107,9 +113,9 @@ class Camera_subscriber(Node):
                         for k in green_pins:
                             self.point_g.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_g.header.frame_id = f"green_pins_{self.green_count}"
-                            self.point_g.point.x = k[0]  # Set x, y, z coordinates
-                            self.point_g.point.y = k[1]
-                            self.point_g.point.z = k[2] 
+                            self.point_g.point.x = k[2]#k[0]  # Set x, y, z coordinates
+                            self.point_g.point.y = -k[0]#k[1]
+                            self.point_g.point.z = -k[1]#k[2] 
                             self.create_marker(self.point_g.point.x,self.point_g.point.y,self.point_g.point.z,self.green_count,'green')
                             self.green_count += 1
 
@@ -119,9 +125,9 @@ class Camera_subscriber(Node):
                         for l in blue_pins:
                             self.point_b.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_b.header.frame_id = f"blue_pins_{self.blue_count}" 
-                            self.point_b.point.x = l[0]  # Set x, y, z coordinates
-                            self.point_b.point.y = l[1]
-                            self.point_b.point.z = l[2] 
+                            self.point_b.point.x = l[2]#l[0]  # Set x, y, z coordinates
+                            self.point_b.point.y = -l[0]#l[1]
+                            self.point_b.point.z = -l[1]#l[2] 
                             self.create_marker(self.point_b.point.x,self.point_b.point.y,self.point_b.point.z,self.blue_count,'blue')
                             self.blue_count += 1
                         
@@ -130,18 +136,6 @@ class Camera_subscriber(Node):
         return response
     
     def depth_world(self, x, y):
-        """
-           Converts pixel coordinates to depth coordinates(x,y,z)
-        
-            Args:
-            -----
-                x (float): Pixel coordinate in X axis
-                y (float): Pixel coordinate in Y axis
-        
-            Returns:
-            --------
-                float: The world frame coorsinates x,y and z
-        """
         if self.intrinsics and self._latest_depth_img is not None and self._latest_color_img is not None:
             self.get_logger().info("processing request")
             
@@ -149,28 +143,13 @@ class Camera_subscriber(Node):
             depth_y = int(y)
             depth = self._latest_depth_img[depth_x, depth_y]
 
-            result = rs2.rs2_deproject_pixel_to_point(self.intrinsics, [x, y], depth)
+            result = rs2.rs2_deproject_pixel_to_point(self.intrinsics, [y, x], depth)
             x_new, y_new, z_new = result[0], result[1], result[2]
             
             return x_new, y_new, z_new
 
 
     def create_marker(self, x, y, z, count,ns):
-        """
-           Creates a marker for each pin deteted and stores them in an array
-        
-            Args:
-            -----
-                x (float): World X coordinate
-                y (float): World Y coordinate
-                z (float): World Z coordinate
-                count (int): Pin counter
-                ns (string): namespace
-        
-            Returns:
-            --------
-                marker_array: Marker array
-        """
         marker = Marker()
         marker.header.frame_id = "camera_link"
         marker.header.stamp = self.get_clock().now().to_msg()
@@ -212,7 +191,6 @@ class Camera_subscriber(Node):
           # Append the marker to the MarkerArray 
 
     def get_latest_frame(self,data):
-        """Gets the lastest frame when service is called."""
         # Wait for a new frame from the RealSense camera
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, 'bgr8')
@@ -225,7 +203,6 @@ class Camera_subscriber(Node):
              
      
     def imageDepthInfoCallback(self, cameraInfo):
-        """Information about Depth Camera intrinsics"""
         try:
             if self.intrinsics:
                 return
@@ -244,9 +221,7 @@ class Camera_subscriber(Node):
         except CvBridgeError as e:
             print(e)
             return
-        
     def imageDepthCallback(self, data):
-        """Converts image data to cv data"""
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, data.encoding)
             self._latest_depth_img = cv_image
@@ -258,9 +233,7 @@ class Camera_subscriber(Node):
 
 
 def main(args=None):
-    """Main execution point of program"""
     rclpy.init(args=args)
     node = Camera_subscriber()
     rclpy.spin(node)
     rclpy.shutdown()
-
