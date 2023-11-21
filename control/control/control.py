@@ -94,12 +94,16 @@ class ControlNode(Node):
             self._run = True
             # RUN ONCE!
             # scan targets
-            await self.scan_targets()
+            # await self.scan_targets()
             ## scan guns
             # self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
             # self.get_logger().info(f"Tag 1 coordinates: ({self.t1_x},{self.t1_y},{self.t1_z})")
 
             # wait for user input
+
+            # grab gun
+            self._grab_future = await self._grab_client.call_async(Grab.Request(self.t1))
+
             # shoot
             return
 

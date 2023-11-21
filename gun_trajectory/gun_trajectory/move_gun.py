@@ -110,10 +110,10 @@ class MoveGun(Node):
         target.position.y = request.position.y + self.tag_offset[1]
         target.position.z = request.position.z + self.tag_offset[2]
 
-        target.orientation.x = 1.0
-        target.orientation.y = 0.0
-        target.orientation.z = 0.0
-        target.orientation.w = 0.0
+        target.orientation.x = request.orientation.x
+        target.orientation.y = request.orientation.y
+        target.orientation.z = request.orientation.z
+        target.orientation.w = request.orientation.w
 
         await self.moveit_api.plan_and_execute(
             self.moveit_api.plan_position_and_orientation, target
