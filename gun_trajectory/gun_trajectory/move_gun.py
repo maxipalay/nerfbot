@@ -107,27 +107,28 @@ class MoveGun(Node):
         
         # move arm to starting location
         target = Pose()
-        # target.position.x = request.pose.position.x + self.tag_offset[0]
-        # target.position.y = request.pose.position.y + self.tag_offset[1]
-        # target.position.z = request.pose.position.z + self.tag_offset[2]
+        target.position.x = request.pose.position.x + self.tag_offset[0]
+        target.position.y = request.pose.position.y + self.tag_offset[1]
+        target.position.z = request.pose.position.z + self.tag_offset[2]
 
-        target.position.x = request.pose.position.x
-        target.position.y = request.pose.position.y
-        target.position.z = request.pose.position.z
+        # target.orientation.x = request.pose.orientation.x
+        # target.orientation.y = request.pose.orientation.y
+        # target.orientation.z = request.pose.orientation.z
+        # target.orientation.w = request.pose.orientation.w
 
-        target.orientation.x = request.pose.orientation.x
-        target.orientation.y = request.pose.orientation.y
-        target.orientation.z = request.pose.orientation.z
-        target.orientation.w = request.pose.orientation.w
+        target.orientation.x = 1.0
+        target.orientation.y = 0.0
+        target.orientation.z = 0.0
+        target.orientation.w = 0.0    
 
         await self.moveit_api.plan_and_execute(
             self.moveit_api.plan_position_and_orientation, target
         )
+
+        await self.grip()
         return response
 
     async def target_scan_callback(self, request, response):
-        await self.grip()
-        return response
         # if we're not running a scan already
         if not self._scanning_targets:
             # set the scanning in progress flag

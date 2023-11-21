@@ -94,7 +94,6 @@ class ControlNode(Node):
         """Main loop."""
 
         if not self._run:
-            self._run = True
             # RUN ONCE!
             # scan targets
             # await self.scan_targets()
@@ -105,8 +104,10 @@ class ControlNode(Node):
             # wait for user input
 
             # grab gun
-            # self.get_logger().info(f"{self.t1}")
-            self._grab_future = await self._grab_client.call_async(Grab.Request(Grab=self.t1))
+            if self.t1.position.x != None:
+                self._run = True
+                self.get_logger().info(f"{self.t1}")
+                self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t1))
 
             # shoot
             return
