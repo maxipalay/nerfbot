@@ -28,7 +28,7 @@ from moveit_msgs.msg import MotionPlanRequest, WorkspaceParameters, RobotState, 
     PlanningScene
 from moveit_msgs.srv import GetPlanningScene, GetPositionIK
 from moveit_msgs.action import MoveGroup, ExecuteTrajectory
-from control_msgs.action import GripperCommand
+from franka_msgs.action import Grasp
 from rclpy.action import ActionClient
 from std_msgs.msg import Header
 from builtin_interfaces.msg import Duration
@@ -57,7 +57,7 @@ class MoveItAPI():
                                                   ExecuteTrajectory, "execute_trajectory",
                                                   callback_group=self._node._cbgrp)
         self._node._gripper_action_client = ActionClient(self._node,
-                                                         GripperCommand, self._gripper_action,
+                                                         Grasp, self._gripper_action,
                                                          callback_group=self._node._cbgrp)
 
         # Publisher
@@ -73,17 +73,18 @@ class MoveItAPI():
         self._node._action_client.wait_for_server()
 
     async def move_gripper(self, width: float,
-                           effort: float = 10.0) -> (bool, GripperCommand.Result()):
+                           speed: float = 0.5, force: float = 10.0) -> (bool, Grasp.Result()):
         """Move the gripper to a specified position."""
-        req = GripperCommand.Goal()
-        req.command.position = width
-        req.command.max_effort = effort
+        req = Grasp.Goal()
+        req.width = width
+        req.speed = speed
+        req.force = force
 
         future = await self._node._gripper_action_client.send_goal_async(req)
 
         result = await future.get_result_async()
 
-        if result.result.reached_goal:
+        if result.result.success:
             return True, result.result
 
         return False, result.result
