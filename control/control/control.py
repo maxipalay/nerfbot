@@ -58,8 +58,11 @@ class ControlNode(Node):
         # while not self._vision_client.wait_for_service(timeout_sec=1.0):
         #     self.get_logger().info('service not available, waiting again...')
 
-        while not self._gun_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info("service not available, waiting again...")
+        # while not self._gun_client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info("service not available, waiting again...")
+
+        # while not self._grab_client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info("service not available, waiting again...")
 
         # main loop timer
         self._loop_timer = self.create_timer(
@@ -102,7 +105,7 @@ class ControlNode(Node):
             # wait for user input
 
             # grab gun
-            self._grab_future = await self._grab_client.call_async(Grab.Request(self.t1))
+            self._grab_future = await self._grab_client.call_async(Grab.Request(Grab=self.t1))
 
             # shoot
             return
