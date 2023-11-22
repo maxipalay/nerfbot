@@ -103,6 +103,14 @@ class ControlNode(Node):
 
             # wait for user input
 
+            # self.t1.position.x = 0.3
+            # self.t1.position.y = 0.0
+            # self.t1.position.z = 0.5
+            # self.t1.orientation.x = 1.0
+            # self.t1.orientation.y = 0.0
+            # self.t1.orientation.z = 0.0
+            # self.t1.orientation.w = 0.0
+
             # grab gun
             if self.t1.position.x != None:
                 self._run = True

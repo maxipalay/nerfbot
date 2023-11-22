@@ -121,13 +121,24 @@ class MoveGun(Node):
         target.orientation.z = 0.0
         target.orientation.w = 0.0
 
+        self.get_logger().info("Homing")
         await self.moveit_api.home_gripper()    
 
+        self.get_logger().info("Moving to target")
         await self.moveit_api.plan_and_execute(
             self.moveit_api.plan_position_and_orientation, target
         )
 
+        self.get_logger().info("Grasping")
         await self.grip()
+
+        self.get_logger().info("Standoff")
+        # Move up 3cm
+        target.position.z += 0.03
+        await self.moveit_api.plan_and_execute(
+            self.moveit_api.plan_position_and_orientation, target
+        )
+
         return response
 
     async def target_scan_callback(self, request, response):
