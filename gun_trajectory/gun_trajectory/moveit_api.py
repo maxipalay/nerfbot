@@ -290,7 +290,7 @@ class MoveItAPI():
         return success, plan, executed
 
     async def plan_position_and_orientation(self, target: Pose,
-                                            start_state: RobotState = None):
+                                            start_state: RobotState = None,execute=False):
         """
         Plan both position and orientation.
 
@@ -312,7 +312,7 @@ class MoveItAPI():
         success, plan = await self.request_motion_plan(goal_state=goal_state,
                                                        goal_orientation=None,
                                                        start_state=start_state,
-                                                       execute=False)
+                                                       execute=execute)
         executed = "N/A"
 
         return success, plan, executed
@@ -333,9 +333,9 @@ class MoveItAPI():
             plan - motion plan for move node
 
         """
-        success, plan, executed = await planner(target, start_state=start_state)
-        if success:
-            executed, response = await self.request_execute(plan)
+        success, plan, executed = await planner(target, start_state=start_state, execute=True)
+        # if success:
+        #     executed, response = await self.request_execute(plan)
 
         return success, plan, executed
 
