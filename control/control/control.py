@@ -11,7 +11,9 @@ from tf2_ros.transform_listener import TransformListener
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 from geometry_msgs.msg import TransformStamped, Quaternion
 from trajectory_interfaces.srv import Target, TargetScanRequest
+from time import sleep
 
+from tf2_ros import TransformBroadcaster
 
 class ControlNode(Node):
     def __init__(self):
@@ -25,8 +27,11 @@ class ControlNode(Node):
         self._cam_hand_tf.transform.translation.x = 0.05
         self._cam_hand_tf.transform.translation.z = 0.065
         self._cam_hand_tf.transform.rotation = Quaternion(
-            x=0.707, y=0.0, z=0.707, w=0.0
+        x=0.707, y=0.0, z=0.707, w=0.0
         )
+        # self._cam_hand_tf.transform.rotation = Quaternion(
+        # x=0.0, y=0.0, z=0.707, w=0.707
+        # )
         self.camera_broadcaster.sendTransform(self._cam_hand_tf)  # publish transform
 
         # Callback group
@@ -82,6 +87,7 @@ class ControlNode(Node):
 
         # run once
         self._run = False
+    
 
     async def loop_cb(self):
         """Main loop."""
@@ -136,17 +142,26 @@ class ControlNode(Node):
         # move robot to scan position
         self.get_logger().info("position 1")
         response = await self._targets_client.call_async(TargetScanRequest.Request())
+      
+
         # scan pins
         self.get_logger().info("requesting camera scan...")
         await self._vision_client.call_async(Empty.Request())
+     
+        # return
         self.get_logger().info("camera scan complete")
+        
+
         count = 2
         while response.more_scans:
             # move robot to scan position
             self.get_logger().info(f"position {count}")
             response = await self._targets_client.call_async(
                 TargetScanRequest.Request()
+
             )
+         
+                
             count += 1
             # scan pins
             self.get_logger().info("requesting camera scan...")
