@@ -67,7 +67,7 @@ class Camera_subscriber(Node):
         self.blue_count=0
         self.green_count=0
         self.yellow_count=0
-        self.not_count=0
+        # self.not_count=0
         self.t=None
         
 
@@ -82,7 +82,7 @@ class Camera_subscriber(Node):
         yellow_pins = [] 
         green_pins =[]
         blue_pins=[] 
-        not_pins=[]
+        # not_pins=[]
         cent=[]
         self.inference_ts=copy.deepcopy(self._latest_color_img_ts)
         #print(self.inference_ts)
@@ -116,66 +116,66 @@ class Camera_subscriber(Node):
                 centroid = ((b[0] + b[2]) // 2,(b[1] + b[3]) // 2)  # Calculate centroid from box coordinates
                 cent.append(centroid)
                 class_name = self.model.names[int(box.cls)]  # Get class name
-                # if class_name != "not_pins":  # Exclude class "not_pins"
-                if class_name == "red_pins": 
-                    x, y, z = self.depth_world(centroid[1], centroid[0])  # Get x, y, z from depth_world function
-                    self.get_logger().info(f"{x},{y},{z}")
-                    red_pins.append((x, y, z)) 
-                    for i in red_pins:
-                        self.point_r.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
-                        self.point_r.header.frame_id = f"red_pins_{self.red_count}"
-                        self.point_r.point.x = i[2]#i[0]  # Set x, y, z coordinates
-                        self.point_r.point.y = -i[0]#i[1]
-                        self.point_r.point.z = -i[1]#i[2]  
-                        self.create_marker(self.point_r.point.x,self.point_r.point.y,self.point_r.point.z,self.red_count,'red')
-                        self.red_count += 1
+                if class_name != "not_pins":  # Exclude class "not_pins"
+                    if class_name == "red_pins": 
+                        x, y, z = self.depth_world(centroid[1], centroid[0])  # Get x, y, z from depth_world function
+                        self.get_logger().info(f"{x},{y},{z}")
+                        red_pins.append((x, y, z)) 
+                        for i in red_pins:
+                            self.point_r.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
+                            self.point_r.header.frame_id = f"red_pins_{self.red_count}"
+                            self.point_r.point.x = i[2]#i[0]  # Set x, y, z coordinates
+                            self.point_r.point.y = -i[0]#i[1]
+                            self.point_r.point.z = -i[1]#i[2]  
+                            self.create_marker(self.point_r.point.x,self.point_r.point.y,self.point_r.point.z,self.red_count,'red')
+                            self.red_count += 1
 
-                elif class_name == "yellow_pins":
-                    x1, y1, z1 = self.depth_world(centroid[1], centroid[0])  # Get x, y, z from depth_world function
-                    yellow_pins.append((x1, y1, z1))
-                    for j in yellow_pins:
-                        self.point_y.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
-                        self.point_y.header.frame_id = f"yellow_pins_{self.yellow_count}" 
-                        self.point_y.point.x = j[2] #j[0]  # Set x, y, z coordinates
-                        self.point_y.point.y = -j[0]#j[1]
-                        self.point_y.point.z = -j[1]#j[2]
-                        self.create_marker(self.point_y.point.x,self.point_y.point.y,self.point_y.point.z,self.yellow_count,'yellow')
-                        self.yellow_count += 1
+                    elif class_name == "yellow_pins":
+                        x1, y1, z1 = self.depth_world(centroid[1], centroid[0])  # Get x, y, z from depth_world function
+                        yellow_pins.append((x1, y1, z1))
+                        for j in yellow_pins:
+                            self.point_y.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
+                            self.point_y.header.frame_id = f"yellow_pins_{self.yellow_count}" 
+                            self.point_y.point.x = j[2] #j[0]  # Set x, y, z coordinates
+                            self.point_y.point.y = -j[0]#j[1]
+                            self.point_y.point.z = -j[1]#j[2]
+                            self.create_marker(self.point_y.point.x,self.point_y.point.y,self.point_y.point.z,self.yellow_count,'yellow')
+                            self.yellow_count += 1
 
-                elif class_name == "green_pins":
-                    x2, y2, z2 = self.depth_world(centroid[1], centroid[0])  # Get x, y, z from depth_world function
-                    green_pins.append((x2, y2, z2))
-                    for k in green_pins:
-                        self.point_g.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
-                        self.point_g.header.frame_id = f"green_pins_{self.green_count}"
-                        self.point_g.point.x =  k[2]#k[0]  # Set x, y, z coordinates
-                        self.point_g.point.y = -k[0]#k[1]
-                        self.point_g.point.z = -k[1]#k[2] 
-                        self.create_marker(self.point_g.point.x,self.point_g.point.y,self.point_g.point.z,self.green_count,'green')
-                        self.green_count += 1
+                    elif class_name == "green_pins":
+                        x2, y2, z2 = self.depth_world(centroid[1], centroid[0])  # Get x, y, z from depth_world function
+                        green_pins.append((x2, y2, z2))
+                        for k in green_pins:
+                            self.point_g.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
+                            self.point_g.header.frame_id = f"green_pins_{self.green_count}"
+                            self.point_g.point.x =  k[2]#k[0]  # Set x, y, z coordinates
+                            self.point_g.point.y = -k[0]#k[1]
+                            self.point_g.point.z = -k[1]#k[2] 
+                            self.create_marker(self.point_g.point.x,self.point_g.point.y,self.point_g.point.z,self.green_count,'green')
+                            self.green_count += 1
 
-                elif class_name == "blue_pins":
-                    x3, y3, z3 = self.depth_world(centroid[1], centroid[0])  # Get x, y, z from depth_world function
-                    blue_pins.append((x3, y3, z3))
-                    for l in blue_pins:
-                        self.point_b.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
-                        self.point_b.header.frame_id = f"blue_pins_{self.blue_count}" 
-                        self.point_b.point.x =  l[2]#l[0]  # Set x, y, z coordinates
-                        self.point_b.point.y = -l[0]#l[1]
-                        self.point_b.point.z = -l[1]#l[2] 
-                        self.create_marker(self.point_b.point.x,self.point_b.point.y,self.point_b.point.z,self.blue_count,'blue')
-                        self.blue_count += 1
-                elif class_name == "not_pins":
-                    x4, y4, z4 = self.depth_world(centroid[1], centroid[0])  # Get x, y, z from depth_world function
-                    not_pins.append((x4, y4, z4))
-                    for m in not_pins:
-                        self.point_b.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
-                        self.point_b.header.frame_id = f"blue_pins_{self.blue_count}" 
-                        self.point_b.point.x =  m[2]#l[0]  # Set x, y, z coordinates
-                        self.point_b.point.y = -m[0]#l[1]
-                        self.point_b.point.z = -m[1]#l[2] 
-                        self.create_marker(self.point_b.point.x,self.point_b.point.y,self.point_b.point.z,self.not_count,'not_pins')
-                        self.not_count += 1
+                    elif class_name == "blue_pins":
+                        x3, y3, z3 = self.depth_world(centroid[1], centroid[0])  # Get x, y, z from depth_world function
+                        blue_pins.append((x3, y3, z3))
+                        for l in blue_pins:
+                            self.point_b.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
+                            self.point_b.header.frame_id = f"blue_pins_{self.blue_count}" 
+                            self.point_b.point.x =  l[2]#l[0]  # Set x, y, z coordinates
+                            self.point_b.point.y = -l[0]#l[1]
+                            self.point_b.point.z = -l[1]#l[2] 
+                            self.create_marker(self.point_b.point.x,self.point_b.point.y,self.point_b.point.z,self.blue_count,'blue')
+                            self.blue_count += 1
+                # elif class_name == "not_pins":
+                #     x4, y4, z4 = self.depth_world(centroid[1], centroid[0])  # Get x, y, z from depth_world function
+                #     not_pins.append((x4, y4, z4))
+                #     for m in not_pins:
+                #         self.point_b.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
+                #         self.point_b.header.frame_id = f"blue_pins_{self.blue_count}" 
+                #         self.point_b.point.x =  m[2]#l[0]  # Set x, y, z coordinates
+                #         self.point_b.point.y = -m[0]#l[1]
+                #         self.point_b.point.z = -m[1]#l[2] 
+                #         self.create_marker(self.point_b.point.x,self.point_b.point.y,self.point_b.point.z,self.not_count,'not_pins')
+                #         self.not_count += 1
             for x in cent:
                 img = cv2.circle(self._latest_color_img,(int(x[0]),int(x[1])), radius=5, color=(0,0,255), thickness=-1)
             if len(cent)>0:
@@ -248,11 +248,11 @@ class Camera_subscriber(Node):
             marker.color.g = 1.0
             marker.color.b = 0.0
             marker.color.a = 1.0
-        elif ns=='not_pins':
-            marker.color.r = 1.0
-            marker.color.g = 1.0
-            marker.color.b = 0.0
-            marker.color.a = 1.0
+        # elif ns=='not_pins':
+        #     marker.color.r = 1.0
+        #     marker.color.g = 1.0
+        #     marker.color.b = 0.0
+        #     marker.color.a = 1.0
         # print(f"namespace:{ns}, x:{x},y:{y}, z:{z}")
         self.marker_array.markers.append(marker)
           # Append the marker to the MarkerArray 
