@@ -18,4 +18,4 @@
         # optional list of tags
         tag:
             ids: [42, 69, 74, 75, 95]            # tag ID
-            sizes: [0.028, 0.028, 0.028, 0.028, 0.028]   # optional tag-specific edge size
+            sizes: [0.038, 0.038, 0.038, 0.038, 0.038]   # optional tag-specific edge size
