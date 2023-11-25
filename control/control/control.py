@@ -69,7 +69,7 @@ class ControlNode(Node):
             0.01, self.loop_cb, callback_group=self.loop_cbgrp
         )
         self._tf_timer = self.create_timer(
-            0.01, self.tf_cb, callback_group=self.tf_cbgrp
+            2, self.tf_cb, callback_group=self.tf_cbgrp
         )
 
         # variables
@@ -127,7 +127,7 @@ class ControlNode(Node):
             # get the latest transform between left and right
             # (rclpy.time.Time() means get the latest information)
             tag_1 = self.buffer.lookup_transform(
-                "panda_link0", "tag36h11:1", rclpy.time.Time()
+                "panda_link0", "tag36h11:42", rclpy.time.Time()
             )
             self.t1.position.x = tag_1.transform.translation.x
             self.t1.position.y = tag_1.transform.translation.y
