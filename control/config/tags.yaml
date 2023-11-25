@@ -2,7 +2,7 @@
     ros__parameters:
         image_transport: raw    # image format
         family: 36h11           # tag family name
-        size: 0.022            # tag edge size in meter
+        size: 0.028            # tag edge size in meter
         max_hamming: 0          # maximum allowed hamming distance (corrected bits)
         z_up: true              # z points upward in camera frame
 
@@ -17,5 +17,5 @@
 
         # optional list of tags
         tag:
-            ids: [1, 2, 3, 4]            # tag ID
-            sizes: [0.022, 0.022, 0.022, 0.022]   # optional tag-specific edge size
+            ids: [42, 69, 74, 75, 95]            # tag ID
+            sizes: [0.028, 0.028, 0.028, 0.028, 0.028]   # optional tag-specific edge size
