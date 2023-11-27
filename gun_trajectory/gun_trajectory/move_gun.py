@@ -39,7 +39,7 @@ class MoveGun(Node):
         self.scan_y = 0.5
         self.scan_z = 0.48688
 
-        self.tag_offset = np.array([0.028,0.0,0.001])  # position of end
+        self.tag_offset = np.array([0.01,0.0,0.1])  # position of end
                                                     # effector relative to tag
 
         ### callback_groups
@@ -103,13 +103,14 @@ class MoveGun(Node):
         return response
     
     async def grab_gun_callback(self, request, response):
+        await self.grip()
         self.get_logger().info("Initiated grab")
         
         # move arm to starting location
         target = Pose()
-        target.position.x = request.pose.position.x + self.tag_offset[0]
-        target.position.y = request.pose.position.y + self.tag_offset[1]
-        target.position.z = request.pose.position.z + self.tag_offset[2]
+        target.position.x = request.pose.position.x
+        target.position.y = request.pose.position.y
+        target.position.z = 0.6
 
         # target.orientation.x = request.pose.orientation.x
         # target.orientation.y = request.pose.orientation.y
@@ -121,20 +122,37 @@ class MoveGun(Node):
         target.orientation.z = 0.0
         target.orientation.w = 0.0
 
-        self.get_logger().info("Homing")
-        await self.moveit_api.home_gripper()    
-
         self.get_logger().info("Moving to target")
-        await self.moveit_api.plan_and_execute(
+        success, plan, executed = await self.moveit_api.plan_and_execute(
             self.moveit_api.plan_position_and_orientation, target
         )
+
+        self.get_logger().info("Homing")
+        await self.moveit_api.home_gripper()   
+
+        target.position.x = request.pose.position.x + self.tag_offset[0]
+        target.position.y = request.pose.position.y + self.tag_offset[1]
+        target.position.z = request.pose.position.z + self.tag_offset[2]
+        self.get_logger().info(f"Moving to z: {target.position.z}")
+
+        success = False
+        count = 0 
+        while not success:
+            success, plan, executed = await self.moveit_api.plan_and_execute(
+                self.moveit_api.plan_position_and_orientation, target
+            )
+            count += 1
+            if count == 10:
+                self.get_logger().info(f"You are useless.")
+                return response
+
 
         self.get_logger().info("Grasping")
         await self.grip()
 
         self.get_logger().info("Standoff")
         # Move up 3cm
-        target.position.z += 0.03
+        target.position.z += 0.2
         await self.moveit_api.plan_and_execute(
             self.moveit_api.plan_position_and_orientation, target
         )
