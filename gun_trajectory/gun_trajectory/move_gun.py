@@ -41,6 +41,7 @@ class MoveGun(Node):
 
         self.tag_offset = np.array([0.01,0.0,0.07])  # position of end
                                                     # effector relative to tag
+        self.ready_offset = 0.05
 
         ### callback_groups
 
@@ -108,7 +109,7 @@ class MoveGun(Node):
         
         # move arm to starting location
         target = Pose()
-        target.position.x = request.pose.position.x + self.tag_offset[0]
+        target.position.x = request.pose.position.x + self.tag_offset[0] + self.ready_offset
         target.position.y = request.pose.position.y + self.tag_offset[1]
         target.position.z = 0.5
 
@@ -150,11 +151,11 @@ class MoveGun(Node):
         self.get_logger().info("Grasping")
         await self.grip()
 
-        return response
-
+        # Move back to ready
         self.get_logger().info("Standoff")
-        # Move up
-        target.position.z += 0.2
+        target.position.x = 0.3
+        target.position.y = 0.0
+        target.position.z = 0.5
         await self.moveit_api.plan_and_execute(
             self.moveit_api.plan_position_and_orientation, target
         )
@@ -228,7 +229,7 @@ class MoveGun(Node):
         target_p.y = 0.6 * np.sin(yaw)
         target_p.z = 0.5
 
-        target_o = euler_to_quaternion(0.0, np.pi / 2 - pitch, yaw)
+        target_o = euler_to_quaternion(np.pi, 0.0, yaw)
         self.get_logger().info(f"{target_p}")
         self.get_logger().info(f"{target_o}")
 
