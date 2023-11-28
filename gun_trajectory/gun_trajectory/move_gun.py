@@ -8,7 +8,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from geometry_msgs.msg import Point, Pose, Quaternion
 from std_srvs.srv import Empty
 
-from trajectory_interfaces.srv import Target, TargetScanRequest
+from trajectory_interfaces.srv import Grab, Target, TargetScanRequest
 
 from .moveit_api import MoveItAPI
 from .quaternion import *
@@ -39,6 +39,9 @@ class MoveGun(Node):
         self.scan_y = 0.5
         self.scan_z = 0.48688
 
+        self.tag_offset = np.array([0.01,0.0,0.07])  # position of end
+                                                    # effector relative to tag
+
         ### callback_groups
 
         ### parameters
@@ -49,6 +52,7 @@ class MoveGun(Node):
         self.target_scan = self.create_service(
             TargetScanRequest, "/target_scan", self.target_scan_callback
         )
+        self.grab_gun = self.create_service(Grab, "/grab", self.grab_gun_callback)
 
         ### timer
 
@@ -97,10 +101,67 @@ class MoveGun(Node):
         )
         self.get_logger().info("Aimed at target")
         return response
+    
+    async def grab_gun_callback(self, request, response):
+        await self.grip()
+        self.get_logger().info("Initiated grab")
+        
+        # move arm to starting location
+        target = Pose()
+        target.position.x = request.pose.position.x + self.tag_offset[0]
+        target.position.y = request.pose.position.y + self.tag_offset[1]
+        target.position.z = 0.5
+
+        # target.orientation.x = request.pose.orientation.x
+        # target.orientation.y = request.pose.orientation.y
+        # target.orientation.z = request.pose.orientation.z
+        # target.orientation.w = request.pose.orientation.w
+
+        target.orientation.x = 1.0
+        target.orientation.y = 0.0
+        target.orientation.z = 0.0
+        target.orientation.w = 0.0
+
+        self.get_logger().info("Moving to target")
+        success, plan, executed = await self.moveit_api.plan_and_execute(
+            self.moveit_api.plan_position_and_orientation, target
+        )
+
+        self.get_logger().info("Homing")
+        await self.moveit_api.home_gripper()   
+
+        target.position.x = request.pose.position.x + self.tag_offset[0]
+        target.position.y = request.pose.position.y + self.tag_offset[1]
+        target.position.z = request.pose.position.z + self.tag_offset[2]
+        self.get_logger().info(f"Moving to z: {target.position.z}")
+
+        success = False
+        count = 0 
+        while not success:
+            success, plan, executed = await self.moveit_api.plan_and_execute(
+                self.moveit_api.plan_position_and_orientation, target
+            )
+            count += 1
+            if count == 10:
+                self.get_logger().info(f"You are useless.")
+                return response
+
+
+        self.get_logger().info("Grasping")
+        await self.grip()
+
+        return response
+
+        self.get_logger().info("Standoff")
+        # Move up
+        target.position.z += 0.2
+        await self.moveit_api.plan_and_execute(
+            self.moveit_api.plan_position_and_orientation, target
+        )
+
+        return response
 
     async def target_scan_callback(self, request, response):
-        # await self.grip()
-        # return response
         # if we're not running a scan already
         if not self._scanning_targets:
             # set the scanning in progress flag

@@ -28,7 +28,7 @@ from moveit_msgs.msg import MotionPlanRequest, WorkspaceParameters, RobotState, 
     PlanningScene
 from moveit_msgs.srv import GetPlanningScene, GetPositionIK
 from moveit_msgs.action import MoveGroup, ExecuteTrajectory
-from franka_msgs.action import Grasp
+from franka_msgs.action import Grasp, Homing
 from rclpy.action import ActionClient
 from std_msgs.msg import Header
 from builtin_interfaces.msg import Duration
@@ -42,6 +42,7 @@ class MoveItAPI():
         self._node = node
         self._planning_group = planning_group
         self._gripper_action = gripper_action
+        self._homing_action = "panda_gripper/homing"
         self._pipeline_id = pipeline_id
         self._constraints_link = constraints_link
 
@@ -58,6 +59,9 @@ class MoveItAPI():
                                                   callback_group=self._node._cbgrp)
         self._node._gripper_action_client = ActionClient(self._node,
                                                          Grasp, self._gripper_action,
+                                                         callback_group=self._node._cbgrp)
+        self._node._homing_action_client = ActionClient(self._node,
+                                                         Homing, self._homing_action,
                                                          callback_group=self._node._cbgrp)
 
         # Publisher
@@ -81,6 +85,19 @@ class MoveItAPI():
         req.force = force
 
         future = await self._node._gripper_action_client.send_goal_async(req)
+
+        result = await future.get_result_async()
+
+        if result.result.success:
+            return True, result.result
+
+        return False, result.result
+
+    async def home_gripper(self) -> (bool, Homing.Result()):
+        '''Fully open the gripper.'''
+        req = Homing.Goal()
+
+        future = await self._node._homing_action_client.send_goal_async(req)
 
         result = await future.get_result_async()
 
@@ -290,7 +307,7 @@ class MoveItAPI():
         return success, plan, executed
 
     async def plan_position_and_orientation(self, target: Pose,
-                                            start_state: RobotState = None,execute=False):
+                                            start_state: RobotState = None,execute=True):
         """
         Plan both position and orientation.
 
@@ -333,7 +350,7 @@ class MoveItAPI():
             plan - motion plan for move node
 
         """
-        success, plan, executed = await planner(target, start_state=start_state, execute=True)
+        success, plan, executed = await planner(target, start_state=start_state,execute=True)
         # if success:
         #     executed, response = await self.request_execute(plan)
 

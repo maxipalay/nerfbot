@@ -9,9 +9,8 @@ import tf2_ros
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
-from geometry_msgs.msg import TransformStamped, Quaternion
-from trajectory_interfaces.srv import Target, TargetScanRequest
-from time import sleep
+from geometry_msgs.msg import TransformStamped, Quaternion, Pose
+from trajectory_interfaces.srv import Grab, Target, TargetScanRequest
 
 from tf2_ros import TransformBroadcaster
 
@@ -52,6 +51,9 @@ class ControlNode(Node):
         self._gun_client = self.create_client(
             Empty, "gun_scan", callback_group=self._cbgrp
         )
+        self._grab_client = self.create_client(
+            Grab, "grab", callback_group=self._cbgrp
+        )
 
         # # wait for services to become available
         # while not self._input_client.wait_for_service(timeout_sec=1.0):
@@ -60,26 +62,30 @@ class ControlNode(Node):
         # while not self._vision_client.wait_for_service(timeout_sec=1.0):
         #     self.get_logger().info('service not available, waiting again...')
 
-        while not self._gun_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info("service not available, waiting again...")
+        # while not self._gun_client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info("service not available, waiting again...")
+
+        while not self._grab_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info("grab service not available, waiting again...")
 
         # main loop timer
         self._loop_timer = self.create_timer(
             0.01, self.loop_cb, callback_group=self.loop_cbgrp
         )
         self._tf_timer = self.create_timer(
-            0.01, self.tf_cb, callback_group=self.tf_cbgrp
+            2, self.tf_cb, callback_group=self.tf_cbgrp
         )
 
         # variables
         self._markers = None  # store the MarkerArray
-        self.t1_x = None
-        self.t1_y = None
-        self.t1_z = None
-        self.t1_ox = None
-        self.t1_oy = None
-        self.t1_ow = None
-        self.t1_oz = None
+        self.t1 = Pose()
+        self.t1.position.x = None
+        self.t1.position.y = None
+        self.t1.position.z = None
+        self.t1.orientation.x = None
+        self.t1.orientation.y = None
+        self.t1.orientation.z = None
+        self.t1.orientation.w = None
 
         # TF listener
         self.buffer = Buffer()
@@ -93,15 +99,29 @@ class ControlNode(Node):
         """Main loop."""
 
         if not self._run:
-            self._run = True
             # RUN ONCE!
             # scan targets
-            await self.scan_targets()
+            # await self.scan_targets()
             ## scan guns
             # self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
             # self.get_logger().info(f"Tag 1 coordinates: ({self.t1_x},{self.t1_y},{self.t1_z})")
 
             # wait for user input
+
+            # self.t1.position.x = 0.3
+            # self.t1.position.y = 0.0
+            # self.t1.position.z = 0.5
+            # self.t1.orientation.x = 1.0
+            # self.t1.orientation.y = 0.0
+            # self.t1.orientation.z = 0.0
+            # self.t1.orientation.w = 0.0
+
+            # grab gun
+            if self.t1.position.x != None:
+                self._run = True
+                self.get_logger().info(f"{self.t1}")
+                self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t1))
+
             # shoot
             return
 
@@ -112,15 +132,15 @@ class ControlNode(Node):
             # get the latest transform between left and right
             # (rclpy.time.Time() means get the latest information)
             tag_1 = self.buffer.lookup_transform(
-                "camera_link", "tag36h11:1", rclpy.time.Time()
+                "panda_link0", "tag36h11:42", rclpy.time.Time()
             )
-            self.t1_x = tag_1.transform.translation.x
-            self.t1_y = tag_1.transform.translation.y
-            self.t1_z = tag_1.transform.translation.z
-            self.t1_ox = tag_1.transform.rotation.x
-            self.t1_oy = tag_1.transform.rotation.y
-            self.t1_ow = tag_1.transform.rotation.w
-            self.t1_oz = tag_1.transform.rotation.z
+            self.t1.position.x = tag_1.transform.translation.x
+            self.t1.position.y = tag_1.transform.translation.y
+            self.t1.position.z = tag_1.transform.translation.z
+            self.t1.orientation.x = tag_1.transform.rotation.x
+            self.t1.orientation.y = tag_1.transform.rotation.y
+            self.t1.orientation.w = tag_1.transform.rotation.w
+            self.t1.orientation.z = tag_1.transform.rotation.z
         except tf2_ros.LookupException as e:
             # the frames don't exist yet
             self.get_logger().debug(f"Lookup exception: {e}")
