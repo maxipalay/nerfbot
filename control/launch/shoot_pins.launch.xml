@@ -5,6 +5,8 @@
 
     <node pkg="gun_trajectory" exec="shoot"/>
 
+    <node pkg="image_yolo" exec="yolo"/>
+
     <node pkg="apriltag_ros" exec="apriltag_node">
         <param from="$(find-pkg-share control)/tags.yaml"/>
         <remap from="camera_info" to="camera/color/camera_info"/>

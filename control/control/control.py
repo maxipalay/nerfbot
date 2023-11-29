@@ -55,15 +55,15 @@ class ControlNode(Node):
             Grab, "grab", callback_group=self._cbgrp
         )
 
-        # # wait for services to become available
+        # wait for services to become available
         # while not self._input_client.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info('service not available, waiting again...')
+        #     self.get_logger().info('input service not available, waiting again...')
 
-        # while not self._vision_client.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info('service not available, waiting again...')
+        while not self._vision_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('yolo service not available, waiting again...')
 
-        # while not self._gun_client.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info("service not available, waiting again...")
+        while not self._gun_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info("gun scan service not available, waiting again...")
 
         while not self._grab_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("grab service not available, waiting again...")
@@ -101,25 +101,16 @@ class ControlNode(Node):
         if not self._run:
             # RUN ONCE!
             # scan targets
-            # await self.scan_targets()
+            await self.scan_targets()
             ## scan guns
-            # self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
-            # self.get_logger().info(f"Tag 1 coordinates: ({self.t1_x},{self.t1_y},{self.t1_z})")
+            self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
+            self.get_logger().info(f"Gun 1 coordinates: ({self.t1.position.x},{self.t1.position.y},{self.t1.position.z})")
 
             # wait for user input
-
-            # self.t1.position.x = 0.3
-            # self.t1.position.y = 0.0
-            # self.t1.position.z = 0.5
-            # self.t1.orientation.x = 1.0
-            # self.t1.orientation.y = 0.0
-            # self.t1.orientation.z = 0.0
-            # self.t1.orientation.w = 0.0
 
             # grab gun
             if self.t1.position.x != None:
                 self._run = True
-                self.get_logger().info(f"{self.t1}")
                 self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t1))
 
             # shoot
