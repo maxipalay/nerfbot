@@ -138,12 +138,12 @@ class ControlNode(Node):
                 # await self._calibration_client.call_async(Empty.Request())
                 self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t1))
 
-            # aim
-            for m in self._markers:
-                if colour_target in m.id:
-                    target_pose = m.pose.position
-                    await self._aim_client.call_async(Target.Request(target=target_pose))
-                    # shoot service
+                # aim
+                for m in self._markers:
+                    if colour_target in m.id:
+                        target_pose = m.pose.position
+                        await self._aim_client.call_async(Target.Request(target=target_pose))
+                        # shoot service
 
             return
 
