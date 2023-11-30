@@ -115,7 +115,7 @@ class ControlNode(Node):
 
             ## scan guns
             self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
-            await self.scan_targets()
+            # await self.scan_targets()
             self.get_logger().info(f"Gun 1 coordinates: ({self.t1.position.x},{self.t1.position.y},{self.t1.position.z})")
 
             # wait for user input
@@ -123,7 +123,7 @@ class ControlNode(Node):
             # grab gun
             if self.t1.position.x != None:
                 self._run = True
-                await self._calibration_client.call_async(Empty.Request())
+                # await self._calibration_client.call_async(Empty.Request())
                 self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t1))
 
             # shoot

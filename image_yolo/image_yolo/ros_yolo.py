@@ -47,7 +47,7 @@ class Camera_subscriber(Node):
         self.pix = None
         self.pix_grade = None
         path = os.path.dirname(__file__)
-        self.model = YOLO('/home/student/final_ws/src/final-project-group2/image_yolo/image_yolo/best.pt')
+        self.model = YOLO('/home/max/courses/495_Embedded_Systems/ws/final_project/src/final-project-group2/image_yolo/image_yolo/best.pt')
         self.centroid=self.create_service(Empty,'coordinates',self.detect_pins)
         
         self.tf_buffer = Buffer()

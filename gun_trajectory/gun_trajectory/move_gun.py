@@ -38,7 +38,7 @@ class MoveGun(Node):
         self.scan_x = 0.30689
         self.scan_y = 0.5
         self.scan_z = 0.48688
-        self.scan_forward = 0.6
+        self.scan_forward = 0.3
         self.scan_up = 0.6
 
         self.tag_offset = np.array([0.01,0.0,0.07])  # position of end
@@ -115,7 +115,7 @@ class MoveGun(Node):
         target = Pose()
         target.position.x = request.pose.position.x + self.tag_offset[0] + self.ready_offset
         target.position.y = request.pose.position.y + self.tag_offset[1]
-        target.position.z = 0.5
+        target.position.z = request.pose.position.z + self.tag_offset[2] + 0.25
 
         # target.orientation.x = request.pose.orientation.x
         # target.orientation.y = request.pose.orientation.y
@@ -127,17 +127,20 @@ class MoveGun(Node):
         target.orientation.z = 0.0
         target.orientation.w = 0.0
 
-        self.get_logger().info("Moving to target")
-        success, plan, executed = await self.moveit_api.plan_and_execute(
+        self.get_logger().info(f"Moving to standoff position.")
+        
+        await self.moveit_api.plan_and_execute(
             self.moveit_api.plan_position_and_orientation, target
         )
-
+        self.get_logger().info("Finished motion to standoff.")
+        
         self.get_logger().info("Homing")       
         await self.moveit_api.home_gripper()   
 
         target.position.x = request.pose.position.x + self.tag_offset[0]
         target.position.y = request.pose.position.y + self.tag_offset[1]
         target.position.z = request.pose.position.z + self.tag_offset[2]
+        self.get_logger().info("Moving to pick position.")
         self.get_logger().info(f"Moving to z: {target.position.z}")
 
         success = False
@@ -222,31 +225,30 @@ class MoveGun(Node):
 
         self.get_logger().info("Starting gun scan")
 
-        return response
 
-        # move arm to starting location
-        target = Pose()
-        target.position.x = self.scan_x
-        target.position.y = -self.scan_y
-        target.position.z = self.scan_z
+        # # move arm to starting location
+        # target = Pose()
+        # target.position.x = self.scan_x
+        # target.position.y = -self.scan_y
+        # target.position.z = self.scan_z
 
-        target.orientation.x = 1.0
-        target.orientation.y = 0.0
-        target.orientation.z = 0.0
-        target.orientation.w = 0.0
-
-        await self.moveit_api.plan_and_execute(
-            self.moveit_api.plan_position_and_orientation, target
-        )
-
-        # move arm to ending location
-        target.position.x = self.scan_x
-        target.position.y = self.scan_y
-        target.position.z = self.scan_z
+        # target.orientation.x = 1.0
+        # target.orientation.y = 0.0
+        # target.orientation.z = 0.0
+        # target.orientation.w = 0.0
 
         await self.moveit_api.plan_and_execute(
-            self.moveit_api.plan_position_and_orientation, target
+            self.moveit_api.plan_position_and_orientation, self._scan_positions[0]
         )
+
+        # # move arm to ending location
+        # target.position.x = self.scan_x
+        # target.position.y = self.scan_y
+        # target.position.z = self.scan_z
+
+        # await self.moveit_api.plan_and_execute(
+        #     self.moveit_api.plan_position_and_orientation, target
+        # )
         self.get_logger().info("Scan complete")
         return response
 
