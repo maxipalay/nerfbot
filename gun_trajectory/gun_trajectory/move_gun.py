@@ -35,9 +35,7 @@ class MoveGun(Node):
         )
 
         ### variables
-        self.scan_x = 0.30689
-        self.scan_y = 0.5
-        self.scan_z = 0.48688
+
 
         self.tag_offset = np.array([0.01,0.0,0.07])  # position of end
                                                     # effector relative to tag
@@ -48,7 +46,7 @@ class MoveGun(Node):
         ### parameters
 
         ### services
-        self.shot = self.create_service(Target, "/shoot", self.shoot_SrvCallback)
+        self.shot = self.create_service(Target, "/aim", self.shoot_SrvCallback)
         self.gun_scan = self.create_service(Empty, "/gun_scan", self.gun_scan_callback)
         self.target_scan = self.create_service(
             TargetScanRequest, "/target_scan", self.target_scan_callback
@@ -197,9 +195,9 @@ class MoveGun(Node):
 
         # move arm to starting location
         target = Pose()
-        target.position.x = self.scan_x
-        target.position.y = -self.scan_y
-        target.position.z = self.scan_z
+        target.position.x = 0.30689
+        target.position.y = 0.0
+        target.position.z = 0.55
 
         target.orientation.x = 1.0
         target.orientation.y = 0.0
@@ -210,14 +208,6 @@ class MoveGun(Node):
             self.moveit_api.plan_position_and_orientation, target
         )
 
-        # move arm to ending location
-        target.position.x = self.scan_x
-        target.position.y = self.scan_y
-        target.position.z = self.scan_z
-
-        await self.moveit_api.plan_and_execute(
-            self.moveit_api.plan_position_and_orientation, target
-        )
         self.get_logger().info("Scan complete")
         return response
 
