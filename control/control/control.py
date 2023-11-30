@@ -54,6 +54,9 @@ class ControlNode(Node):
         self._grab_client = self.create_client(
             Grab, "grab", callback_group=self._cbgrp
         )
+        self._calibration_client = self.create_client(
+            Empty, "cali", callback_group=self._cbgrp
+        )
 
         # wait for services to become available
         # while not self._input_client.wait_for_service(timeout_sec=1.0):
@@ -67,6 +70,9 @@ class ControlNode(Node):
 
         while not self._grab_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("grab service not available, waiting again...")
+
+        while not self._calibration_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info("calibrate service not available, waiting again...")
 
         # main loop timer
         self._loop_timer = self.create_timer(
@@ -98,10 +104,15 @@ class ControlNode(Node):
     async def loop_cb(self):
         """Main loop."""
 
+        # calibrate gripper
+        
+        
         if not self._run:
             # RUN ONCE!
             # scan targets
+            await self._calibration_client.call_async(Empty.Request())
             await self.scan_targets()
+
             ## scan guns
             self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
             self.get_logger().info(f"Gun 1 coordinates: ({self.t1.position.x},{self.t1.position.y},{self.t1.position.z})")
@@ -111,6 +122,7 @@ class ControlNode(Node):
             # grab gun
             if self.t1.position.x != None:
                 self._run = True
+                await self._calibration_client.call_async(Empty.Request())
                 self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t1))
 
             # shoot
