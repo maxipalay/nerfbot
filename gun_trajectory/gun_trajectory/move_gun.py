@@ -50,7 +50,7 @@ class MoveGun(Node):
         ### parameters
 
         ### services
-        self.shot = self.create_service(Target, "/shoot", self.shoot_SrvCallback)
+        self.shot = self.create_service(Target, "/aim", self.shoot_SrvCallback)
         self.gun_scan = self.create_service(Empty, "/gun_scan", self.gun_scan_callback)
         self.target_scan = self.create_service(
             TargetScanRequest, "/target_scan", self.target_scan_callback

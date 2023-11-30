@@ -9,7 +9,7 @@ import tf2_ros
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
-from geometry_msgs.msg import TransformStamped, Quaternion, Pose
+from geometry_msgs.msg import TransformStamped, Quaternion, Pose, Point
 from trajectory_interfaces.srv import Grab, Target, TargetScanRequest
 
 from tf2_ros import TransformBroadcaster
@@ -37,6 +37,7 @@ class ControlNode(Node):
         self._cbgrp = ReentrantCallbackGroup()
         self.loop_cbgrp = MutuallyExclusiveCallbackGroup()
         self.tf_cbgrp = MutuallyExclusiveCallbackGroup()
+        self.marker_cbgrp = MutuallyExclusiveCallbackGroup()
 
         # clients and publishers
         self._input_client = self.create_client(
@@ -58,6 +59,11 @@ class ControlNode(Node):
             Empty, "cali", callback_group=self._cbgrp
         )
 
+        self._aim_client = self.create_client(
+            Target, "aim", callback_group=self._cbgrp
+        )
+
+
         # wait for services to become available
         # while not self._input_client.wait_for_service(timeout_sec=1.0):
         #     self.get_logger().info('input service not available, waiting again...')
@@ -74,6 +80,9 @@ class ControlNode(Node):
         while not self._calibration_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("calibrate service not available, waiting again...")
 
+        while not self._aim_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info("aim service not available, waiting again...")
+
         # main loop timer
         self._loop_timer = self.create_timer(
             0.01, self.loop_cb, callback_group=self.loop_cbgrp
@@ -81,6 +90,9 @@ class ControlNode(Node):
         self._tf_timer = self.create_timer(
             2, self.tf_cb, callback_group=self.tf_cbgrp
         )
+
+        self.marker_pub = self.create_subscription(
+            MarkerArray, "visualization_marker_array", self.marker_cb, 10, callback_group=self.marker_cbgrp)
 
         # variables
         self._markers = None  # store the MarkerArray
@@ -106,11 +118,12 @@ class ControlNode(Node):
 
         # calibrate gripper
         
+        colour_target = "blue"
         
         if not self._run:
             # RUN ONCE!
             # scan targets
-            await self._calibration_client.call_async(Empty.Request())
+            # await self._calibration_client.call_async(Empty.Request())
             await self.scan_targets()
 
             ## scan guns
@@ -126,7 +139,13 @@ class ControlNode(Node):
                 # await self._calibration_client.call_async(Empty.Request())
                 self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t1))
 
-            # shoot
+                # aim
+                for m in self._markers:
+                    if colour_target in m.id:
+                        target_pose = m.pose.position
+                        await self._aim_client.call_async(Target.Request(target=target_pose))
+                        # shoot service
+
             return
 
     def tf_cb(self):
@@ -155,11 +174,8 @@ class ControlNode(Node):
             # the times are two far apart to extrapolate
             self.get_logger().debug(f"Extrapolation exception: {e}")
 
-    def publish_markers(self):
-        """Pusblishes YOLO detections as Markers to visualize them in Rviz."""
-        self._marker_pub.publish(self._markers)
-
-        return
+    def marker_cb(self, msg):
+        self._markers = msg
 
     async def scan_targets(self):
         """Moves the robot to scanning positions and requests for detections."""
