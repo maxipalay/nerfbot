@@ -115,6 +115,7 @@ class ControlNode(Node):
 
             ## scan guns
             self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
+            await self.scan_targets()
             self.get_logger().info(f"Gun 1 coordinates: ({self.t1.position.x},{self.t1.position.y},{self.t1.position.z})")
 
             # wait for user input

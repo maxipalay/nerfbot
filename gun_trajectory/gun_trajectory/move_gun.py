@@ -38,6 +38,8 @@ class MoveGun(Node):
         self.scan_x = 0.30689
         self.scan_y = 0.5
         self.scan_z = 0.48688
+        self.scan_forward = 0.6
+        self.scan_up = 0.6
 
         self.tag_offset = np.array([0.01,0.0,0.07])  # position of end
                                                     # effector relative to tag
@@ -174,12 +176,11 @@ class MoveGun(Node):
             self._scan_positions
         ):
             # move to the next point
-            self.get_logger().info(str(self._scan_positions[self._target_scan_index]))
+            self.get_logger().info(f"Next point: {str(self._scan_positions[self._target_scan_index])}")
             await self.moveit_api.plan_and_execute(
                 self.moveit_api.plan_position_and_orientation,
                 self._scan_positions[self._target_scan_index],
             )
-            self.get_logger().info("MOVING SUCCESS!!")
             # increase the index by one
             self._target_scan_index += 1
             # if the index has gone above all our points
@@ -193,7 +194,35 @@ class MoveGun(Node):
         return response
 
     async def gun_scan_callback(self, request, response):
-        self.get_logger().info("Starting scan")
+        self.get_logger().info("Initiated gun scan")
+
+        orientation = Quaternion(x=1.0,y=0.0,z=0.0,w=0.0)
+
+        # self._scan_positions = [
+        #     Pose(
+        #         position=Point(x=self.scan_x, y=-self.scan_y, z=self.scan_z),
+        #         orientation=orientation,
+        #     ),
+        #     Pose(
+        #         position=Point(x=self.scan_forward, y=0.0, z=self.scan_up),
+        #         orientation=orientation,
+        #     ),
+        #     Pose(
+        #         position=Point(x=self.scan_x, y=self.scan_y, z=self.scan_z),
+        #         orientation=orientation,
+        #     ),
+        # ]
+
+        self._scan_positions = [
+            Pose(
+                position=Point(x=self.scan_forward, y=0.0, z=self.scan_up),
+                orientation=orientation,
+            ),
+        ]
+
+        self.get_logger().info("Starting gun scan")
+
+        return response
 
         # move arm to starting location
         target = Pose()
