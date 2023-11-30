@@ -159,18 +159,19 @@ class MoveItAPI():
 
         # Joint constraints / GOAL STATE
         joint_constraints = []
-
+        avoid_joints = ['panda_finger_joint1', 'panda_finger_joint2']
         if goal_state is not None:
             i = 0
             for joint in planning_scene.scene.robot_state.joint_state.name:
-                constraint = JointConstraint(
-                            joint_name=joint,
-                            position=goal_state.joint_state.position[i],
-                            tolerance_above=0.0001,
-                            tolerance_below=0.0001,
-                            weight=1.0)
-                joint_constraints.append(constraint)
-                i += 1
+                if joint not in avoid_joints:
+                    constraint = JointConstraint(
+                                joint_name=joint,
+                                position=goal_state.joint_state.position[i],
+                                tolerance_above=0.0001,
+                                tolerance_below=0.0001,
+                                weight=1.0)
+                    joint_constraints.append(constraint)
+                    i += 1
 
         # Orientation_constraints
         orientation_constraints = []
@@ -235,7 +236,7 @@ class MoveItAPI():
             planning_options=planning_options)
 
         self._node.future = await self._node._action_client.send_goal_async(move_group_req)
-
+        self._node.get_logger().info(str(motion_request))
         goal_handle = self._node.future
         if not goal_handle.accepted:
             self._node.get_logger().debug("MoveGroup rejected the goal!")
