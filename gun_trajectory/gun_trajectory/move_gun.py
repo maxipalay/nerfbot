@@ -41,7 +41,7 @@ class MoveGun(Node):
         self.scan_forward = 0.3
         self.scan_up = 0.6
 
-        self.tag_offset = np.array([0.01,0.0,0.07])  # position of end
+        self.tag_offset = np.array([0.01,0.0,0.09])  # position of end
                                                     # effector relative to tag
         self.ready_offset = 0.05
 
@@ -160,7 +160,7 @@ class MoveGun(Node):
 
         # Move back to ready
         self.get_logger().info("Standoff")
-        target.position.x = 0.3
+        target.position.x = 0.4
         target.position.y = 0.0
         target.position.z = 0.5
         await self.moveit_api.plan_and_execute(

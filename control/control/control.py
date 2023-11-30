@@ -24,6 +24,7 @@ class ControlNode(Node):
         self._cam_hand_tf.header.frame_id = "panda_hand"
         self._cam_hand_tf.child_frame_id = "camera_link"
         self._cam_hand_tf.transform.translation.x = 0.05
+        self._cam_hand_tf.transform.translation.y = -0.02
         self._cam_hand_tf.transform.translation.z = 0.065
         self._cam_hand_tf.transform.rotation = Quaternion(
         x=0.707, y=0.0, z=0.707, w=0.0
@@ -90,12 +91,14 @@ class ControlNode(Node):
         self._tf_timer = self.create_timer(
             2, self.tf_cb, callback_group=self.tf_cbgrp
         )
-
+        markerQoS = QoSProfile(
+            depth=10, durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)
+        
         self.marker_pub = self.create_subscription(
-            MarkerArray, "visualization_marker_array", self.marker_cb, 10, callback_group=self.marker_cbgrp)
+            MarkerArray, "visualization_marker_array", self.marker_cb, markerQoS, callback_group=self.marker_cbgrp)
 
         # variables
-        self._markers = None  # store the MarkerArray
+        self._markers = []  # store the MarkerArray
         self.t1 = Pose()
         self.t1.position.x = None
         self.t1.position.y = None
@@ -124,9 +127,10 @@ class ControlNode(Node):
             # RUN ONCE!
             # scan targets
             # await self._calibration_client.call_async(Empty.Request())
+        
             await self.scan_targets()
 
-            ## scan guns
+            # scan guns
             self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
             # await self.scan_targets()
             self.get_logger().info(f"Gun 1 coordinates: ({self.t1.position.x},{self.t1.position.y},{self.t1.position.z})")
@@ -140,8 +144,10 @@ class ControlNode(Node):
                 self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t1))
 
                 # aim
+                self.get_logger().info(f"{self._markers}")
                 for m in self._markers:
-                    if colour_target in m.id:
+                    self.get_logger().info(f"\n{m}")
+                    if colour_target in m.ns:
                         target_pose = m.pose.position
                         await self._aim_client.call_async(Target.Request(target=target_pose))
                         # shoot service
@@ -175,7 +181,8 @@ class ControlNode(Node):
             self.get_logger().debug(f"Extrapolation exception: {e}")
 
     def marker_cb(self, msg):
-        self._markers = msg
+        for m in msg.markers:
+            self._markers.append(m)
 
     async def scan_targets(self):
         """Moves the robot to scanning positions and requests for detections."""
