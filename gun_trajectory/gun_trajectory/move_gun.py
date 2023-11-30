@@ -54,6 +54,7 @@ class MoveGun(Node):
             TargetScanRequest, "/target_scan", self.target_scan_callback
         )
         self.grab_gun = self.create_service(Grab, "/grab", self.grab_gun_callback)
+        self.calibrate_gun = self.create_service(Empty, "/cali", self.grip_callback)
 
         ### timer
 
@@ -85,8 +86,9 @@ class MoveGun(Node):
         self._scanning_targets = False
         self._target_scan_index = 0
 
-    async def grip(self):
+    async def grip_callback(self, request, response):
         await self.moveit_api.move_gripper(0.025, 0.05, 10.0)
+        return response
 
     async def shoot_SrvCallback(self, request, response):
         self.get_logger().info("Found target")
@@ -104,7 +106,7 @@ class MoveGun(Node):
         return response
     
     async def grab_gun_callback(self, request, response):
-        await self.grip()
+       
         self.get_logger().info("Initiated grab")
         
         # move arm to starting location
@@ -128,7 +130,7 @@ class MoveGun(Node):
             self.moveit_api.plan_position_and_orientation, target
         )
 
-        self.get_logger().info("Homing")
+        self.get_logger().info("Homing")       
         await self.moveit_api.home_gripper()   
 
         target.position.x = request.pose.position.x + self.tag_offset[0]
@@ -149,7 +151,7 @@ class MoveGun(Node):
 
 
         self.get_logger().info("Grasping")
-        await self.grip()
+        await self.moveit_api.move_gripper(0.025, 0.05, 10.0)
 
         # Move back to ready
         self.get_logger().info("Standoff")
@@ -177,6 +179,7 @@ class MoveGun(Node):
                 self.moveit_api.plan_position_and_orientation,
                 self._scan_positions[self._target_scan_index],
             )
+            self.get_logger().info("MOVING SUCCESS!!")
             # increase the index by one
             self._target_scan_index += 1
             # if the index has gone above all our points
