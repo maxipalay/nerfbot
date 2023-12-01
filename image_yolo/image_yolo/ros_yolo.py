@@ -198,7 +198,7 @@ class Camera_subscriber(Node):
             print(self.intrinsics)
             x_new, y_new, z_new = result[0], result[1], result[2]
             
-            return x_new, y_new, z_new
+            return x_new, y_new, z_new +0.04
 
 
     def create_marker(self, x, y, z, count,ns):
@@ -209,7 +209,7 @@ class Camera_subscriber(Node):
         # marker.header.stamp = self.get_clock().now().to_msg()
         k=PointStamped()
         k.point.x= z/1000+0.065
-        k.point.y = -y/1000
+        k.point.y = -y/1000+0.02
         k.point.z= x/1000+0.05
 
         tp=tf2_geometry_msgs.do_transform_point(k,self.t)

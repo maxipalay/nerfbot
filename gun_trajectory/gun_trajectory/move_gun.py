@@ -4,7 +4,6 @@ import rclpy
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import ReentrantCallbackGroup
-
 from geometry_msgs.msg import Point, Pose, Quaternion
 from std_srvs.srv import Empty
 
@@ -41,7 +40,7 @@ class MoveGun(Node):
         self.scan_forward = 0.3
         self.scan_up = 0.6
 
-        self.tag_offset = np.array([0.01,0.0,0.09])  # position of end
+        self.tag_offset = np.array([0.02,0.0,0.11])  # position of end
                                                     # effector relative to tag
         self.ready_offset = 0.05
 
@@ -74,14 +73,24 @@ class MoveGun(Node):
         # rotation around x axis -45 degrees
         rot_2 = Quaternion(x=-0.3826834, y=0.0, z=0.0, w=0.9238795)
 
+        # self._scan_positions = [
+        #     Pose(
+        #         position=Point(x=0.5, y=0.0, z=0.6),
+        #         orientation=quaternion_multiply(base_orientation, rot_1),
+        #     ),
+        #     Pose(
+        #         position=Point(x=0.5, y=0.0, z=0.6),
+        #         orientation=quaternion_multiply(base_orientation, rot_2),
+        #     ),
+        # ]
         self._scan_positions = [
             Pose(
-                position=Point(x=0.5, y=0.0, z=0.6),
-                orientation=quaternion_multiply(base_orientation, rot_1),
+                position=Point(x=0.31, y=-0.172, z=0.6),
+                orientation=Quaternion(x=0.806, y=-0.184, z=0.549, w=0.122),
             ),
             Pose(
-                position=Point(x=0.5, y=0.0, z=0.6),
-                orientation=quaternion_multiply(base_orientation, rot_2),
+                position=Point(x=0.31, y=0.172, z=0.6),
+                orientation=Quaternion(x=0.7865, y=0.2054, z=0.562, w=-0.153),
             ),
         ]
 
@@ -162,7 +171,7 @@ class MoveGun(Node):
         self.get_logger().info("Standoff")
         target.position.x = 0.4
         target.position.y = 0.0
-        target.position.z = 0.5
+        target.position.z = 0.6
         await self.moveit_api.plan_and_execute(
             self.moveit_api.plan_position_and_orientation, target
         )
@@ -253,17 +262,18 @@ class MoveGun(Node):
         return response
 
     def find_pose(self, x, y, z):
+        # y = y + np.sign(y) * 0.10
         self.get_logger().info(f"{x}, {y}")
         yaw = np.arctan2(y, x)
-        pitch = np.arctan2(z - 0.5, x)
+        pitch = np.arctan2(0.55 -z - 0.09, np.sqrt(x**2 + y**2) - 0.45)
         self.get_logger().info(f"{pitch}, {yaw}")
 
         target_p = Point()
-        target_p.x = 0.6 * np.cos(yaw)
-        target_p.y = 0.6 * np.sin(yaw)
-        target_p.z = 0.5
+        target_p.x = 0.5 * np.cos(yaw)
+        target_p.y = 0.5 * np.sin(yaw)
+        target_p.z = 0.55 
 
-        target_o = euler_to_quaternion(np.pi, 0.0, yaw)
+        target_o = euler_to_quaternion(np.pi, pitch, yaw)
         self.get_logger().info(f"{target_p}")
         self.get_logger().info(f"{target_o}")
 

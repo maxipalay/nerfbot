@@ -11,6 +11,7 @@ from tf2_ros.transform_listener import TransformListener
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 from geometry_msgs.msg import TransformStamped, Quaternion, Pose, Point
 from trajectory_interfaces.srv import Grab, Target, TargetScanRequest
+from franka_msgs.srv import SetLoad
 
 from tf2_ros import TransformBroadcaster
 
@@ -64,6 +65,9 @@ class ControlNode(Node):
             Target, "aim", callback_group=self._cbgrp
         )
 
+        # self._load_client = self.create_client(
+        #     Target, "service_server/set_load", callback_group=self._cbgrp
+        # )
 
         # wait for services to become available
         # while not self._input_client.wait_for_service(timeout_sec=1.0):
@@ -83,6 +87,9 @@ class ControlNode(Node):
 
         while not self._aim_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("aim service not available, waiting again...")
+
+        # while not self._load_client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info("load client service not available, waiting again...")
 
         # main loop timer
         self._loop_timer = self.create_timer(
@@ -142,8 +149,8 @@ class ControlNode(Node):
                 self._run = True
                 # await self._calibration_client.call_async(Empty.Request())
                 self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t1))
-
-                # aim
+                # await self._load_client.call_async(SetLoad.Request(mass=1.5,center_of_mass=[0.0,0.0,0.17]))
+                # # aim
                 self.get_logger().info(f"{self._markers}")
                 for m in self._markers:
                     self.get_logger().info(f"\n{m}")
