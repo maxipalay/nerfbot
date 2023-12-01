@@ -57,6 +57,8 @@ class MoveGun(Node):
         self.grab_gun = self.create_service(Grab, "/grab", self.grab_gun_callback)
         self.calibrate_gun = self.create_service(Empty, "/cali", self.grip_callback)
 
+        self.move_cartesian_srv = self.create_service(Grab, "/move_cart", self.move_cart_callback) # shoudl be removed, used for testing
+
         ### timer
 
         ### clients
@@ -97,6 +99,10 @@ class MoveGun(Node):
         self._scanning_targets = False
         self._target_scan_index = 0
 
+    async def move_cart_callback(self, request, response):
+        await self.moveit_api.move_cartesian(request.pose)
+        return response
+
     async def grip_callback(self, request, response):
         await self.moveit_api.move_gripper(0.025, 0.05, 10.0)
         return response
@@ -110,9 +116,11 @@ class MoveGun(Node):
 
         target = Pose(position=target_p, orientation=target_o)
 
-        await self.moveit_api.plan_and_execute(
-            self.moveit_api.plan_position_and_orientation, target
-        )
+        # await self.moveit_api.plan_and_execute(
+        #     self.moveit_api.plan_position_and_orientation, target
+        # )
+        await self.moveit_api.move_cartesian(target)
+            
         self.get_logger().info("Aimed at target")
         return response
     
@@ -141,28 +149,31 @@ class MoveGun(Node):
         await self.moveit_api.plan_and_execute(
             self.moveit_api.plan_position_and_orientation, target
         )
+        # await self.moveit_api.move_cartesian(target)
+            
         self.get_logger().info("Finished motion to standoff.")
         
         self.get_logger().info("Homing")       
-        await self.moveit_api.home_gripper()   
+        # await self.moveit_api.home_gripper()   
 
         target.position.x = request.pose.position.x + self.tag_offset[0]
         target.position.y = request.pose.position.y + self.tag_offset[1]
         target.position.z = request.pose.position.z + self.tag_offset[2]
+        
         self.get_logger().info("Moving to pick position.")
-        self.get_logger().info(f"Moving to z: {target.position.z}")
+        self.get_logger().info(f"Moving to z: {target.position.z}")    
 
-        success = False
-        count = 0 
-        while not success:
-            success, plan, executed = await self.moveit_api.plan_and_execute(
-                self.moveit_api.plan_position_and_orientation, target
-            )
-            count += 1
-            if count == 10:
-                self.get_logger().info(f"You are useless.")
-                return response
-
+        # success = False
+        # count = 0 
+        # while not success:
+        #     success, plan, executed = await self.moveit_api.plan_and_execute(
+        #         self.moveit_api.plan_position_and_orientation, target
+        #     )
+        #     count += 1
+        #     if count == 10:
+        #         self.get_logger().info(f"You are useless.")
+        #         return response
+        await self.moveit_api.move_cartesian(target)
 
         self.get_logger().info("Grasping")
         await self.moveit_api.move_gripper(0.025, 0.05, 10.0)
@@ -172,9 +183,10 @@ class MoveGun(Node):
         target.position.x = 0.4
         target.position.y = 0.0
         target.position.z = 0.6
-        await self.moveit_api.plan_and_execute(
-            self.moveit_api.plan_position_and_orientation, target
-        )
+        # await self.moveit_api.plan_and_execute(
+        #     self.moveit_api.plan_position_and_orientation, target
+        # )
+        await self.moveit_api.move_cartesian(target)
 
         return response
 
@@ -193,6 +205,7 @@ class MoveGun(Node):
                 self.moveit_api.plan_position_and_orientation,
                 self._scan_positions[self._target_scan_index],
             )
+            # await self.moveit_api.move_cartesian(self._scan_positions[self._target_scan_index])
             # increase the index by one
             self._target_scan_index += 1
             # if the index has gone above all our points
@@ -246,9 +259,10 @@ class MoveGun(Node):
         # target.orientation.z = 0.0
         # target.orientation.w = 0.0
 
-        await self.moveit_api.plan_and_execute(
-            self.moveit_api.plan_position_and_orientation, self._scan_positions[0]
-        )
+        # await self.moveit_api.plan_and_execute(
+        #     self.moveit_api.plan_position_and_orientation, self._scan_positions[0]
+        # )
+        await self.moveit_api.move_cartesian(self._scan_positions[0])
 
         # # move arm to ending location
         # target.position.x = self.scan_x

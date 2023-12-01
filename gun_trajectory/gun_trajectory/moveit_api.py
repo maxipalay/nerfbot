@@ -26,7 +26,7 @@ from rclpy.node import Node
 from moveit_msgs.msg import MotionPlanRequest, WorkspaceParameters, RobotState, Constraints, \
     JointConstraint, PlanningOptions, PositionIKRequest, OrientationConstraint, CollisionObject, \
     PlanningScene
-from moveit_msgs.srv import GetPlanningScene, GetPositionIK
+from moveit_msgs.srv import GetPlanningScene, GetPositionIK, GetCartesianPath
 from moveit_msgs.action import MoveGroup, ExecuteTrajectory
 from franka_msgs.action import Grasp, Homing
 from rclpy.action import ActionClient
@@ -51,6 +51,8 @@ class MoveItAPI():
                                                   callback_group=self._node._cbgrp)
         self._node.ik_cli = self._node.create_client(GetPositionIK, 'compute_ik',
                                                      callback_group=self._node._cbgrp)
+        self._node.cartesian_cli = self._node.create_client(GetCartesianPath, 'compute_cartesian_path',
+                                                     callback_group=self._node._cbgrp)
         self._node._action_client = ActionClient(self._node,
                                                  MoveGroup, 'move_action',
                                                  callback_group=self._node._cbgrp)
@@ -63,6 +65,8 @@ class MoveItAPI():
         self._node._homing_action_client = ActionClient(self._node,
                                                          Homing, self._homing_action,
                                                          callback_group=self._node._cbgrp)
+        
+
 
         # Publisher
         self._node.pscene_pub = self._node.create_publisher(PlanningScene, 'planning_scene', 10)
@@ -73,6 +77,9 @@ class MoveItAPI():
 
         while not self._node.ik_cli.wait_for_service(timeout_sec=1.0):
             self._node.get_logger().debug('IK service not available, waiting again...')
+
+        while not self._node.cartesian_cli.wait_for_service(timeout_sec=1.0):
+            self._node.get_logger().debug('Cartesian path service not available, waiting again...')
 
         self._node._action_client.wait_for_server()
 
@@ -381,11 +388,11 @@ class MoveItAPI():
         self._node.pscene_pub.publish(ps.scene)
 
     async def request_execute(self,
-                              motion_plan=MoveGroup.Result()) -> (bool,
+                              trajectory) -> (bool,
                                                                   ExecuteTrajectory.Result()):
         """Request execution of motion plan."""
         execute_request = ExecuteTrajectory.Goal()
-        execute_request.trajectory = motion_plan.planned_trajectory
+        execute_request.trajectory = trajectory
         future_response = await self._node._execute_client.send_goal_async(execute_request)
         goal_handle = future_response
         if not goal_handle.accepted:
@@ -396,3 +403,48 @@ class MoveItAPI():
             return False, execute_response
         else:
             return True, execute_response
+
+    async def move_cartesian(self, pose):
+
+        # cartesian path request
+
+        planning_scene = await self.get_planning_scene()
+        
+    
+        start_state = planning_scene.scene.robot_state
+
+        request = GetCartesianPath.Request()
+
+        request.start_state = start_state
+
+        request.header=Header(
+                stamp=self._node.get_clock().now().to_msg(),
+                frame_id='panda_link0')
+        
+        request.group_name = 'panda_manipulator'
+
+        request.link_name = 'panda_hand_tcp'
+        
+        request.waypoints = [pose]
+
+        request.avoid_collisions = True
+
+        request.max_step = 0.05
+
+        request.max_velocity_scaling_factor = 0.1
+
+        request.max_acceleration_scaling_factor = 0.1
+
+        self._node.get_logger().info(str(dir(request)))
+
+        request.cartesian_speed_limited_link = 'panda_hand_tcp'
+
+
+        self._node.get_logger().info(str(request))
+
+        response = await self._node.cartesian_cli.call_async(request)
+        self._node.get_logger().info(str(response))
+
+        await self.request_execute(response.solution)
+
+        
