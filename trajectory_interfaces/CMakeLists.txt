@@ -17,6 +17,7 @@ set(srv_files
   "srv/Target.srv"
   "srv/TargetScanRequest.srv"
   "srv/Grab.srv"
+  "srv/UserInput.srv"
 )
 
  rosidl_generate_interfaces(${PROJECT_NAME}
