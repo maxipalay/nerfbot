@@ -123,6 +123,7 @@ class MoveGun(Node):
         return response
 
     async def grip_callback(self, request, response):
+        await self.set_payload(0.0)
         await self.moveit_api.move_gripper(0.025, 0.05, 10.0)
         return response
     
@@ -243,27 +244,25 @@ class MoveGun(Node):
 
         target.position.x = request.pose.position.x + self.tag_offset[0]
         target.position.y = request.pose.position.y + self.tag_offset[1]
-        target.position.z = request.pose.position.z + self.tag_offset[2]
+        target.position.z = request.pose.position.z + self.tag_offset[2] + 0.02
         
         self.get_logger().info("Moving to pick position.")
         self.get_logger().info(f"Moving to z: {target.position.z}")    
 
         await self.moveit_api.move_cartesian(target)
 
-        self.get_logger().info("Opening")        
+        self.get_logger().info("Opening")  
+        await self.set_payload(0.0)      
         await self.moveit_api.move_gripper(0.04, 0.5, 10.0)
 
-        await self.set_payload(0.0)
-        # move arm to starting location
-        target = Pose()
-        target.position.x = request.pose.position.x + self.tag_offset[0] + self.ready_offset
-        target.position.y = request.pose.position.y + self.tag_offset[1]
         target.position.z = request.pose.position.z + self.tag_offset[2] + 0.25
-
-        target.orientation.x = 1.0
-        target.orientation.y = 0.0
-        target.orientation.z = 0.0
-        target.orientation.w = 0.0
+        await self.moveit_api.move_cartesian(target)
+        
+        # move arm to starting location
+        target = Pose(
+                position=Point(x=self.scan_forward, y=0.0, z=self.scan_up),
+                orientation=Quaternion(x=1.0, y=0.0, z=0.0, w=0.0),
+            )
 
         self.get_logger().info(f"Moving to standoff position.")
         
@@ -272,6 +271,7 @@ class MoveGun(Node):
         )
             
         self.get_logger().info("Finished motion to standoff.")
+        await self.moveit_api.move_gripper(0.04, 0.5, 10.0)
 
         return response
         
