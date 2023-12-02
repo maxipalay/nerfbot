@@ -58,7 +58,7 @@ class ControlNode(Node):
         self._grab_client = self.create_client(
             Grab, "grab", callback_group=self._cbgrp
         )
-        self._grab_client = self.create_client(
+        self._place_client = self.create_client(
             Grab, "place", callback_group=self._cbgrp
         )
         self._calibration_client = self.create_client(
@@ -85,6 +85,9 @@ class ControlNode(Node):
 
         while not self._grab_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("grab service not available, waiting again...")
+
+        while not self._place_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info("place service not available, waiting again...")
 
         while not self._calibration_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("calibrate service not available, waiting again...")
@@ -164,6 +167,8 @@ class ControlNode(Node):
                     req = Fire.Request()
                     req.gun_id = 1
                     # await self._shoot_client.call_async(req)
+
+            self.place_future = await self._place_client.call_async(Grab.Request(pose=self.t1))
 
             return
 
