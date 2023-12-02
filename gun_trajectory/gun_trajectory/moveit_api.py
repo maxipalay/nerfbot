@@ -26,7 +26,7 @@ from rclpy.node import Node
 from moveit_msgs.msg import MotionPlanRequest, WorkspaceParameters, RobotState, Constraints, \
     JointConstraint, PlanningOptions, PositionIKRequest, OrientationConstraint, CollisionObject, \
     PlanningScene
-from moveit_msgs.srv import GetPlanningScene, GetPositionIK
+from moveit_msgs.srv import GetPlanningScene, GetPositionIK, GetCartesianPath
 from moveit_msgs.action import MoveGroup, ExecuteTrajectory
 from franka_msgs.action import Grasp, Homing
 from rclpy.action import ActionClient
@@ -51,6 +51,8 @@ class MoveItAPI():
                                                   callback_group=self._node._cbgrp)
         self._node.ik_cli = self._node.create_client(GetPositionIK, 'compute_ik',
                                                      callback_group=self._node._cbgrp)
+        self._node.cartesian_cli = self._node.create_client(GetCartesianPath, 'compute_cartesian_path',
+                                                     callback_group=self._node._cbgrp)
         self._node._action_client = ActionClient(self._node,
                                                  MoveGroup, 'move_action',
                                                  callback_group=self._node._cbgrp)
@@ -63,6 +65,8 @@ class MoveItAPI():
         self._node._homing_action_client = ActionClient(self._node,
                                                          Homing, self._homing_action,
                                                          callback_group=self._node._cbgrp)
+        
+
 
         # Publisher
         self._node.pscene_pub = self._node.create_publisher(PlanningScene, 'planning_scene', 10)
@@ -73,6 +77,9 @@ class MoveItAPI():
 
         while not self._node.ik_cli.wait_for_service(timeout_sec=1.0):
             self._node.get_logger().debug('IK service not available, waiting again...')
+
+        while not self._node.cartesian_cli.wait_for_service(timeout_sec=1.0):
+            self._node.get_logger().debug('Cartesian path service not available, waiting again...')
 
         self._node._action_client.wait_for_server()
 
@@ -114,14 +121,24 @@ class MoveItAPI():
         planning_scene = self._node.future
         return planning_scene
 
-    async def compute_ik(self, target_pose: Pose) -> (bool, RobotState):
+    async def compute_ik(self, target_pose: Pose, hint_robot_state = None, constraints = None) -> (bool, RobotState):
         # GETTING THE ROBOT STATE FROM THE SCENE
         # Request the planning scene Planning Scene Request
         planning_scene = await self.get_planning_scene()
 
         # Assemble the motion plan request
         ik_req = PositionIKRequest()
-        ik_req.robot_state.joint_state = planning_scene.scene.robot_state.joint_state
+        if hint_robot_state is None:
+            ik_req.robot_state.joint_state = planning_scene.scene.robot_state.joint_state
+        else:
+            ik_req.robot_state.joint_state = hint_robot_state.joint_state
+            # ik_req.robot_state.joint_state.name.append('panda_finger_joint1')
+            # ik_req.robot_state.joint_state.name.append('panda_finger_joint2')
+            # ik_req.robot_state.joint_state.position.append(0.02)
+            # ik_req.robot_state.joint_state.position.append(0.02)
+
+        ik_req.avoid_collisions = True
+
         ik_req.group_name = self._planning_group
         ik_req.timeout = Duration(sec=5)
 
@@ -129,14 +146,18 @@ class MoveItAPI():
             header=Header(
                 stamp=self._node.get_clock().now().to_msg()),
             pose=target_pose)
+        
+        if constraints is not None:
+            ik_req.constraints = constraints
 
+        self._node.get_logger().info(str(ik_req))
         future = await self._node.ik_cli.call_async(GetPositionIK.Request(ik_request=ik_req))
 
         goal_state = future.solution
         if future.error_code.val == -31:
-            self._node.get_logger().debug('No IK Solution Found.')
+            self._node.get_logger().info('No IK Solution Found.')
         elif future.error_code.val == 1:
-            self._node.get_logger().debug('IK Solution Found')
+            self._node.get_logger().info('IK Solution Found')
             return True, goal_state
         return False, None
 
@@ -159,18 +180,19 @@ class MoveItAPI():
 
         # Joint constraints / GOAL STATE
         joint_constraints = []
-
+        avoid_joints = ['panda_finger_joint1', 'panda_finger_joint2']
         if goal_state is not None:
             i = 0
             for joint in planning_scene.scene.robot_state.joint_state.name:
-                constraint = JointConstraint(
-                            joint_name=joint,
-                            position=goal_state.joint_state.position[i],
-                            tolerance_above=0.0001,
-                            tolerance_below=0.0001,
-                            weight=1.0)
-                joint_constraints.append(constraint)
-                i += 1
+                if joint not in avoid_joints:
+                    constraint = JointConstraint(
+                                joint_name=joint,
+                                position=goal_state.joint_state.position[i],
+                                tolerance_above=0.0001,
+                                tolerance_below=0.0001,
+                                weight=1.0)
+                    joint_constraints.append(constraint)
+                    i += 1
 
         # Orientation_constraints
         orientation_constraints = []
@@ -235,7 +257,7 @@ class MoveItAPI():
             planning_options=planning_options)
 
         self._node.future = await self._node._action_client.send_goal_async(move_group_req)
-
+        # self._node.get_logger().info(str(motion_request))
         goal_handle = self._node.future
         if not goal_handle.accepted:
             self._node.get_logger().debug("MoveGroup rejected the goal!")
@@ -307,7 +329,7 @@ class MoveItAPI():
         return success, plan, executed
 
     async def plan_position_and_orientation(self, target: Pose,
-                                            start_state: RobotState = None,execute=True):
+                                            start_state: RobotState = None,execute=True, hint_state = None, constraints=None):
         """
         Plan both position and orientation.
 
@@ -322,8 +344,9 @@ class MoveItAPI():
             plan - motion plan for move node
 
         """
-        success, goal_state = await self.compute_ik(target)
-        print("ik: "+str(success))
+        
+        success, goal_state = await self.compute_ik(target, hint_state, constraints)
+
 
         # Plan trajectory to desired pose
         success, plan = await self.request_motion_plan(goal_state=goal_state,
@@ -335,7 +358,7 @@ class MoveItAPI():
         return success, plan, executed
 
     async def plan_and_execute(self, planner, target: Pose,
-                               start_state: RobotState = None):
+                               start_state: RobotState = None, hint_state = None, constraints = None):
         """
         Plan AND execute.
 
@@ -350,7 +373,7 @@ class MoveItAPI():
             plan - motion plan for move node
 
         """
-        success, plan, executed = await planner(target, start_state=start_state,execute=True)
+        success, plan, executed = await planner(target, start_state=start_state,hint_state = hint_state, execute=True, constraints=constraints)
         # if success:
         #     executed, response = await self.request_execute(plan)
 
@@ -380,11 +403,11 @@ class MoveItAPI():
         self._node.pscene_pub.publish(ps.scene)
 
     async def request_execute(self,
-                              motion_plan=MoveGroup.Result()) -> (bool,
+                              trajectory) -> (bool,
                                                                   ExecuteTrajectory.Result()):
         """Request execution of motion plan."""
         execute_request = ExecuteTrajectory.Goal()
-        execute_request.trajectory = motion_plan.planned_trajectory
+        execute_request.trajectory = trajectory
         future_response = await self._node._execute_client.send_goal_async(execute_request)
         goal_handle = future_response
         if not goal_handle.accepted:
@@ -395,3 +418,48 @@ class MoveItAPI():
             return False, execute_response
         else:
             return True, execute_response
+
+    async def move_cartesian(self, pose):
+
+        # cartesian path request
+
+        planning_scene = await self.get_planning_scene()
+        
+    
+        start_state = planning_scene.scene.robot_state
+
+        request = GetCartesianPath.Request()
+
+        request.start_state = start_state
+
+        request.header=Header(
+                stamp=self._node.get_clock().now().to_msg(),
+                frame_id='panda_link0')
+        
+        request.group_name = 'panda_manipulator'
+
+        request.link_name = 'panda_hand_tcp'
+        
+        request.waypoints = [pose]
+
+        request.avoid_collisions = True
+
+        request.max_step = 0.05
+
+        request.max_velocity_scaling_factor = 0.1
+
+        request.max_acceleration_scaling_factor = 0.1
+
+        # self._node.get_logger().info(str(dir(request)))
+
+        request.cartesian_speed_limited_link = 'panda_hand_tcp'
+
+
+        # self._node.get_logger().info(str(request))
+
+        response = await self._node.cartesian_cli.call_async(request)
+        # self._node.get_logger().info(str(response))
+
+        await self.request_execute(response.solution)
+
+        
