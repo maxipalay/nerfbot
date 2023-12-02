@@ -121,14 +121,24 @@ class MoveItAPI():
         planning_scene = self._node.future
         return planning_scene
 
-    async def compute_ik(self, target_pose: Pose) -> (bool, RobotState):
+    async def compute_ik(self, target_pose: Pose, hint_robot_state = None, constraints = None) -> (bool, RobotState):
         # GETTING THE ROBOT STATE FROM THE SCENE
         # Request the planning scene Planning Scene Request
         planning_scene = await self.get_planning_scene()
 
         # Assemble the motion plan request
         ik_req = PositionIKRequest()
-        ik_req.robot_state.joint_state = planning_scene.scene.robot_state.joint_state
+        if hint_robot_state is None:
+            ik_req.robot_state.joint_state = planning_scene.scene.robot_state.joint_state
+        else:
+            ik_req.robot_state.joint_state = hint_robot_state.joint_state
+            # ik_req.robot_state.joint_state.name.append('panda_finger_joint1')
+            # ik_req.robot_state.joint_state.name.append('panda_finger_joint2')
+            # ik_req.robot_state.joint_state.position.append(0.02)
+            # ik_req.robot_state.joint_state.position.append(0.02)
+
+        ik_req.avoid_collisions = True
+
         ik_req.group_name = self._planning_group
         ik_req.timeout = Duration(sec=5)
 
@@ -136,14 +146,18 @@ class MoveItAPI():
             header=Header(
                 stamp=self._node.get_clock().now().to_msg()),
             pose=target_pose)
+        
+        if constraints is not None:
+            ik_req.constraints = constraints
 
+        self._node.get_logger().info(str(ik_req))
         future = await self._node.ik_cli.call_async(GetPositionIK.Request(ik_request=ik_req))
 
         goal_state = future.solution
         if future.error_code.val == -31:
-            self._node.get_logger().debug('No IK Solution Found.')
+            self._node.get_logger().info('No IK Solution Found.')
         elif future.error_code.val == 1:
-            self._node.get_logger().debug('IK Solution Found')
+            self._node.get_logger().info('IK Solution Found')
             return True, goal_state
         return False, None
 
@@ -243,7 +257,7 @@ class MoveItAPI():
             planning_options=planning_options)
 
         self._node.future = await self._node._action_client.send_goal_async(move_group_req)
-        self._node.get_logger().info(str(motion_request))
+        # self._node.get_logger().info(str(motion_request))
         goal_handle = self._node.future
         if not goal_handle.accepted:
             self._node.get_logger().debug("MoveGroup rejected the goal!")
@@ -315,7 +329,7 @@ class MoveItAPI():
         return success, plan, executed
 
     async def plan_position_and_orientation(self, target: Pose,
-                                            start_state: RobotState = None,execute=True):
+                                            start_state: RobotState = None,execute=True, hint_state = None, constraints=None):
         """
         Plan both position and orientation.
 
@@ -330,8 +344,9 @@ class MoveItAPI():
             plan - motion plan for move node
 
         """
-        success, goal_state = await self.compute_ik(target)
-        print("ik: "+str(success))
+        
+        success, goal_state = await self.compute_ik(target, hint_state, constraints)
+
 
         # Plan trajectory to desired pose
         success, plan = await self.request_motion_plan(goal_state=goal_state,
@@ -343,7 +358,7 @@ class MoveItAPI():
         return success, plan, executed
 
     async def plan_and_execute(self, planner, target: Pose,
-                               start_state: RobotState = None):
+                               start_state: RobotState = None, hint_state = None, constraints = None):
         """
         Plan AND execute.
 
@@ -358,7 +373,7 @@ class MoveItAPI():
             plan - motion plan for move node
 
         """
-        success, plan, executed = await planner(target, start_state=start_state,execute=True)
+        success, plan, executed = await planner(target, start_state=start_state,hint_state = hint_state, execute=True, constraints=constraints)
         # if success:
         #     executed, response = await self.request_execute(plan)
 
@@ -435,15 +450,15 @@ class MoveItAPI():
 
         request.max_acceleration_scaling_factor = 0.1
 
-        self._node.get_logger().info(str(dir(request)))
+        # self._node.get_logger().info(str(dir(request)))
 
         request.cartesian_speed_limited_link = 'panda_hand_tcp'
 
 
-        self._node.get_logger().info(str(request))
+        # self._node.get_logger().info(str(request))
 
         response = await self._node.cartesian_cli.call_async(request)
-        self._node.get_logger().info(str(response))
+        # self._node.get_logger().info(str(response))
 
         await self.request_execute(response.solution)
 
