@@ -57,6 +57,7 @@ class MoveGun(Node):
             TargetScanRequest, "/target_scan", self.target_scan_callback, callback_group=self._cbgrp
         )
         self.grab_gun = self.create_service(Grab, "/grab", self.grab_gun_callback, callback_group=self._cbgrp)
+        self.place_gun = self.create_service(Grab, "/place", self.place_gun_callback)
         self.calibrate_gun = self.create_service(Empty, "/cali", self.grip_callback,callback_group=self._cbgrp)
 
         self.controller_client = self.create_client(SwitchController, "/controller_manager/switch_controller", callback_group=self._cbgrp)
@@ -171,11 +172,6 @@ class MoveGun(Node):
         target.position.y = request.pose.position.y + self.tag_offset[1]
         target.position.z = request.pose.position.z + self.tag_offset[2] + 0.25
 
-        # target.orientation.x = request.pose.orientation.x
-        # target.orientation.y = request.pose.orientation.y
-        # target.orientation.z = request.pose.orientation.z
-        # target.orientation.w = request.pose.orientation.w
-
         target.orientation.x = 1.0
         target.orientation.y = 0.0
         target.orientation.z = 0.0
@@ -199,16 +195,6 @@ class MoveGun(Node):
         self.get_logger().info("Moving to pick position.")
         self.get_logger().info(f"Moving to z: {target.position.z}")    
 
-        # success = False
-        # count = 0 
-        # while not success:
-        #     success, plan, executed = await self.moveit_api.plan_and_execute(
-        #         self.moveit_api.plan_position_and_orientation, target
-        #     )
-        #     count += 1
-        #     if count == 10:
-        #         self.get_logger().info(f"You are useless.")
-        #         return response
         await self.moveit_api.move_cartesian(target)
 
         self.get_logger().info("Grasping")
@@ -225,11 +211,6 @@ class MoveGun(Node):
         target.position.y = request.pose.position.y + self.tag_offset[1]
         target.position.z = request.pose.position.z + self.tag_offset[2] + 0.25
 
-        # target.orientation.x = request.pose.orientation.x
-        # target.orientation.y = request.pose.orientation.y
-        # target.orientation.z = request.pose.orientation.z
-        # target.orientation.w = request.pose.orientation.w
-
         target.orientation.x = 1.0
         target.orientation.y = 0.0
         target.orientation.z = 0.0
@@ -240,6 +221,59 @@ class MoveGun(Node):
         await self.moveit_api.move_cartesian(target)
 
         return response
+    
+    async def place_gun_callback(self,request,response):
+        '''Replaces gun on the mount after shooting'''
+        self.get_logger().info("Initiated place")
+
+        # move arm to starting location
+        target = Pose()
+        target.position.x = request.pose.position.x + self.tag_offset[0] + self.ready_offset
+        target.position.y = request.pose.position.y + self.tag_offset[1]
+        target.position.z = request.pose.position.z + self.tag_offset[2] + 0.25
+
+        target.orientation.x = 1.0
+        target.orientation.y = 0.0
+        target.orientation.z = 0.0
+        target.orientation.w = 0.0
+
+        self.get_logger().info(f"Moving to standoff position.")
+
+        await self.moveit_api.move_cartesian(target)
+
+        target.position.x = request.pose.position.x + self.tag_offset[0]
+        target.position.y = request.pose.position.y + self.tag_offset[1]
+        target.position.z = request.pose.position.z + self.tag_offset[2]
+        
+        self.get_logger().info("Moving to pick position.")
+        self.get_logger().info(f"Moving to z: {target.position.z}")    
+
+        await self.moveit_api.move_cartesian(target)
+
+        self.get_logger().info("Opening")        
+        await self.moveit_api.move_gripper(0.04, 0.5, 10.0)
+
+        # move arm to starting location
+        target = Pose()
+        target.position.x = request.pose.position.x + self.tag_offset[0] + self.ready_offset
+        target.position.y = request.pose.position.y + self.tag_offset[1]
+        target.position.z = request.pose.position.z + self.tag_offset[2] + 0.25
+
+        target.orientation.x = 1.0
+        target.orientation.y = 0.0
+        target.orientation.z = 0.0
+        target.orientation.w = 0.0
+
+        self.get_logger().info(f"Moving to standoff position.")
+        
+        await self.moveit_api.plan_and_execute(
+            self.moveit_api.plan_position_and_orientation, target
+        )
+            
+        self.get_logger().info("Finished motion to standoff.")
+
+        return response
+        
 
     async def target_scan_callback(self, request, response):
         self.get_logger().info(f"received target scan request. Current status: {self._scanning_targets}, {self._target_scan_index}")

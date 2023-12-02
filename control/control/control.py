@@ -58,6 +58,9 @@ class ControlNode(Node):
         self._grab_client = self.create_client(
             Grab, "grab", callback_group=self._cbgrp
         )
+        self._grab_client = self.create_client(
+            Grab, "place", callback_group=self._cbgrp
+        )
         self._calibration_client = self.create_client(
             Empty, "cali", callback_group=self._cbgrp
         )
