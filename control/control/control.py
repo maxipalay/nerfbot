@@ -1,3 +1,4 @@
+import time
 import rclpy
 from rclpy.node import Node
 from std_srvs.srv import Empty
@@ -10,7 +11,7 @@ from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 from geometry_msgs.msg import TransformStamped, Quaternion, Pose, Point
-from trajectory_interfaces.srv import Grab, Target, TargetScanRequest
+from trajectory_interfaces.srv import Grab, Target, TargetScanRequest, UserInput
 from franka_msgs.srv import SetLoad
 from trigger_interfaces.srv import Fire
 
@@ -44,7 +45,7 @@ class ControlNode(Node):
 
         # clients and publishers
         self._input_client = self.create_client(
-            Empty, "input", callback_group=self._cbgrp
+            UserInput, "input", callback_group=self._cbgrp
         )
         self._vision_client = self.create_client(
             Empty, "coordinates", callback_group=self._cbgrp
@@ -74,8 +75,8 @@ class ControlNode(Node):
         )
 
         # # wait for services to become available
-        # # while not self._input_client.wait_for_service(timeout_sec=1.0):
-        # #     self.get_logger().info('input service not available, waiting again...')
+        while not self._input_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('input service not available, waiting again...')
 
         while not self._vision_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('yolo service not available, waiting again...')
@@ -132,7 +133,8 @@ class ControlNode(Node):
 
         # calibrate gripper
         
-        colour_target = "blue"
+        input_answer = await self._input_client.call_async(UserInput.Request())
+        colour_target = input_answer.answer
         
         if not self._run:
             self._run = True
@@ -166,6 +168,8 @@ class ControlNode(Node):
                     # shoot service
                     req = Fire.Request()
                     req.gun_id = 1
+                    # remove sleep when arduino is added
+                    time.sleep(5)
                     # await self._shoot_client.call_async(req)
 
             self.place_future = await self._place_client.call_async(Grab.Request(pose=self.t1))
