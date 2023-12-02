@@ -47,7 +47,7 @@ class Camera_subscriber(Node):
         self.pix = None
         self.pix_grade = None
         path = os.path.dirname(__file__)
-        self.model = YOLO('/home/max/courses/495_Embedded_Systems/ws/final_project/src/final-project-group2/image_yolo/image_yolo/best.pt')
+        self.model = YOLO('/home/rahulroy/final_project/src/final/image_yolo/image_yolo/best.pt')
         self.centroid=self.create_service(Empty,'coordinates',self.detect_pins)
         
         self.tf_buffer = Buffer()
@@ -125,7 +125,7 @@ class Camera_subscriber(Node):
                             self.point_r.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_r.header.frame_id = f"red_pins_{self.red_count}"
                             self.point_r.point.x = i[2]#i[0]  # Set x, y, z coordinates
-                            self.point_r.point.y = -i[0]#i[1]
+                            self.point_r.point.y = -i[0]*0.6#i[1]
                             self.point_r.point.z = -i[1]#i[2]  
                             self.create_marker(self.point_r.point.x,self.point_r.point.y,self.point_r.point.z,self.red_count,'red')
                             self.red_count += 1
@@ -137,7 +137,7 @@ class Camera_subscriber(Node):
                             self.point_y.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_y.header.frame_id = f"yellow_pins_{self.yellow_count}" 
                             self.point_y.point.x = j[2] #j[0]  # Set x, y, z coordinates
-                            self.point_y.point.y = -j[0]#j[1]
+                            self.point_y.point.y = -j[0]*0.6#j[1]
                             self.point_y.point.z = -j[1]#j[2]
                             self.create_marker(self.point_y.point.x,self.point_y.point.y,self.point_y.point.z,self.yellow_count,'yellow')
                             self.yellow_count += 1
@@ -149,7 +149,7 @@ class Camera_subscriber(Node):
                             self.point_g.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_g.header.frame_id = f"green_pins_{self.green_count}"
                             self.point_g.point.x =  k[2]#k[0]  # Set x, y, z coordinates
-                            self.point_g.point.y = -k[0]#k[1]
+                            self.point_g.point.y = -k[0]*0.6#k[1]
                             self.point_g.point.z = -k[1]#k[2] 
                             self.create_marker(self.point_g.point.x,self.point_g.point.y,self.point_g.point.z,self.green_count,'green')
                             self.green_count += 1
