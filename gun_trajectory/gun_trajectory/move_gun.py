@@ -253,6 +253,7 @@ class MoveGun(Node):
         self.get_logger().info("Opening")        
         await self.moveit_api.move_gripper(0.04, 0.5, 10.0)
 
+        await self.set_payload(0.0)
         # move arm to starting location
         target = Pose()
         target.position.x = request.pose.position.x + self.tag_offset[0] + self.ready_offset
