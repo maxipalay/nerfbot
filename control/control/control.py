@@ -120,6 +120,15 @@ class ControlNode(Node):
         self.t1.orientation.z = None
         self.t1.orientation.w = None
 
+        self.t2 = Pose()
+        self.t2.position.x = None
+        self.t2.position.y = None
+        self.t2.position.z = None
+        self.t2.orientation.x = None
+        self.t2.orientation.y = None
+        self.t2.orientation.z = None
+        self.t2.orientation.w = None
+
         # TF listener
         self.buffer = Buffer()
         self.listener = TransformListener(self.buffer, self)
@@ -160,6 +169,7 @@ class ControlNode(Node):
             self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t1))
             # # aim
             self.get_logger().info(f"{self._markers}")
+            marker_count = 0
             for m in self._markers:
                 self.get_logger().info(f"\n{m}")
                 if colour_target in m.ns:
@@ -171,9 +181,14 @@ class ControlNode(Node):
                     # remove sleep when arduino is added
                     time.sleep(5)
                     # await self._shoot_client.call_async(req)
-
-            self.place_future = await self._place_client.call_async(Grab.Request(pose=self.t1))
-
+                    marker_count += 1
+                
+                if marker_count == 2:
+                    self.place_future = await self._place_client.call_async(Grab.Request(pose=self.t1))
+                    self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t2))
+            
+            self.place_future = await self._place_client.call_async(Grab.Request(pose=self.t2))
+            await self._calibration_client.call_async(Empty.Request()) 
             return
 
     def tf_cb(self):
@@ -192,6 +207,17 @@ class ControlNode(Node):
             self.t1.orientation.y = tag_1.transform.rotation.y
             self.t1.orientation.w = tag_1.transform.rotation.w
             self.t1.orientation.z = tag_1.transform.rotation.z
+
+            tag_2 = self.buffer.lookup_transform(
+                "panda_link0", "tag36h11:42", rclpy.time.Time()
+            )
+            self.t2.position.x = tag_2.transform.translation.x
+            self.t2.position.y = tag_2.transform.translation.y
+            self.t2.position.z = tag_2.transform.translation.z
+            self.t2.orientation.x = tag_2.transform.rotation.x
+            self.t2.orientation.y = tag_2.transform.rotation.y
+            self.t2.orientation.w = tag_2.transform.rotation.w
+            self.t2.orientation.z = tag_2.transform.rotation.z
         except tf2_ros.LookupException as e:
             # the frames don't exist yet
             self.get_logger().debug(f"Lookup exception: {e}")
