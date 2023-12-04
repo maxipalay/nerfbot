@@ -129,6 +129,8 @@ class ControlNode(Node):
         self.t2.orientation.z = None
         self.t2.orientation.w = None
 
+        self.marker_count = 0
+
         # TF listener
         self.buffer = Buffer()
         self.listener = TransformListener(self.buffer, self)
@@ -142,54 +144,73 @@ class ControlNode(Node):
 
         # calibrate gripper
         
+        
+        self.get_logger().error('Waiting for Input.')
+        
+
         input_answer = await self._input_client.call_async(UserInput.Request())
         colour_target = input_answer.answer
-        
+        # RUN ONCE!
+        # # scan targets
+        await self._calibration_client.call_async(Empty.Request()) #########################################
+    
         if not self._run:
-            self._run = True
-            # RUN ONCE!
-            # # scan targets
-            await self._calibration_client.call_async(Empty.Request()) #########################################
-        
             await self.scan_targets()
+        self._run = True
+        # scan guns
+        self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
 
-            # scan guns
-            self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
+        self.get_logger().info(f"Gun 1 coordinates: ({self.t1.position.x},{self.t1.position.y},{self.t1.position.z})")
 
-            self.get_logger().info(f"Gun 1 coordinates: ({self.t1.position.x},{self.t1.position.y},{self.t1.position.z})")
+        # wait for user input
 
-            # wait for user input
-
-            # grab gun
-            while self.t1.position.x is None:
-                pass
-            
-            self.get_logger().info("grabbing gun!")
-            # if self.t1.position.x != None:
+        # grab gun
+        while self.t1.position.x is None:
+            pass
+        
+        self.get_logger().info("grabbing gun!")
+        # if self.t1.position.x != None:
+        if self.marker_count < 2:
+            self.get_logger().info(f"{self.t1}")
+            self.last_t = self.t1
             self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t1))
-            # # aim
-            self.get_logger().info(f"{self._markers}")
-            marker_count = 0
-            for m in self._markers:
-                self.get_logger().info(f"\n{m}")
-                if colour_target in m.ns:
-                    target_pose = m.pose.position
-                    await self._aim_client.call_async(Target.Request(target=target_pose))
-                    # shoot service
-                    req = Fire.Request()
-                    req.gun_id = 1
-                    # remove sleep when arduino is added
-                    time.sleep(5)
-                    # await self._shoot_client.call_async(req)
-                    marker_count += 1
-                
-                if marker_count == 2:
-                    self.place_future = await self._place_client.call_async(Grab.Request(pose=self.t1))
-                    self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t2))
+            self.gun1 = True
+        else:
+            self.last_t = self.t2
+            self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t2))
+            self.gun1 = False
+
+        # # aim
+        self.get_logger().info(f"{self._markers}")
+        
+        for m in self._markers:
+            self.get_logger().info(f"\n{m}")
             
-            self.place_future = await self._place_client.call_async(Grab.Request(pose=self.t2))
-            await self._calibration_client.call_async(Empty.Request()) 
-            return
+            if colour_target in m.ns:
+                if self.marker_count == 2 and self.gun1:
+                    self.place_future = await self._place_client.call_async(Grab.Request(pose=self.last_t))
+                    self.gun1 = False
+                    self.last_t = self.t2
+                    self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t2))
+                target_pose = m.pose.position
+                await self._aim_client.call_async(Target.Request(target=target_pose))
+                # shoot service
+                req = Fire.Request()
+                if self.gun1:
+                    req.gun_id = 0
+                else:
+                    req.gun_id = 1
+                # remove sleep when arduino is added
+                # time.sleep(5)
+                await self._shoot_client.call_async(req)
+                self.marker_count += 1 
+                self.get_logger().info(f"{self.marker_count}")
+            
+            
+        
+        self.place_future = await self._place_client.call_async(Grab.Request(pose=self.last_t))
+        await self._calibration_client.call_async(Empty.Request()) 
+        return
 
     def tf_cb(self):
         """Listens to tf data to track April Tags."""
@@ -209,7 +230,7 @@ class ControlNode(Node):
             self.t1.orientation.z = tag_1.transform.rotation.z
 
             tag_2 = self.buffer.lookup_transform(
-                "panda_link0", "tag36h11:42", rclpy.time.Time()
+                "panda_link0", "tag36h11:95", rclpy.time.Time()
             )
             self.t2.position.x = tag_2.transform.translation.x
             self.t2.position.y = tag_2.transform.translation.y
@@ -229,8 +250,19 @@ class ControlNode(Node):
             self.get_logger().debug(f"Extrapolation exception: {e}")
 
     def marker_cb(self, msg):
-        for m in msg.markers:
-            self._markers.append(m)
+        for given_m in msg.markers:
+            duplicate = False
+            x = given_m.pose.position.x
+            y = given_m.pose.position.y
+            z = given_m.pose.position.z
+            for stored_m in self._markers:
+                xp = stored_m.pose.position.x
+                yp = stored_m.pose.position.y
+                zp = stored_m.pose.position.z
+                if abs(x - xp) <0.01 and abs(y - yp)<0.01 and abs(z-zp)<0.01:
+                    duplicate=True
+            if not duplicate:
+                self._markers.append(given_m)
 
     async def scan_targets(self):
         """Moves the robot to scanning positions and requests for detections."""
