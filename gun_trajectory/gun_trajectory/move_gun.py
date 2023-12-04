@@ -368,13 +368,13 @@ class MoveGun(Node):
         # y = y + np.sign(y) * 0.10
         self.get_logger().info(f"{x}, {y}")
         yaw = np.arctan2(y, x)
-        pitch = np.arctan2(0.55 -z - 0.09, np.sqrt(x**2 + y**2) - 0.45)
+        pitch = np.arctan2(0.60 -z - 0.09, np.sqrt(x**2 + y**2) - 0.525)
         self.get_logger().info(f"{pitch}, {yaw}")
 
         target_p = Point()
-        target_p.x = 0.5 * np.cos(yaw)
-        target_p.y = 0.5 * np.sin(yaw)
-        target_p.z = 0.55 
+        target_p.x = 0.525 * np.cos(yaw)
+        target_p.y = 0.525 * np.sin(yaw)
+        target_p.z = 0.60 
 
         target_o = euler_to_quaternion(np.pi, pitch, yaw)
         self.get_logger().info(f"{target_p}")
