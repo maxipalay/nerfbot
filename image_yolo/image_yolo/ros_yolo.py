@@ -69,6 +69,8 @@ class Camera_subscriber(Node):
         self.yellow_count=0
         # self.not_count=0
         self.t=None
+
+        self.scaling = 0.615
         
 
         markerQoS = QoSProfile(
@@ -125,7 +127,7 @@ class Camera_subscriber(Node):
                             self.point_r.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_r.header.frame_id = f"red_pins_{self.red_count}"
                             self.point_r.point.x = i[2]#i[0]  # Set x, y, z coordinates
-                            self.point_r.point.y = -i[0]*0.6#i[1]
+                            self.point_r.point.y = -i[0]*self.scaling #i[1]
                             self.point_r.point.z = -i[1]#i[2]  
                             self.create_marker(self.point_r.point.x,self.point_r.point.y,self.point_r.point.z,self.red_count,'red')
                             self.red_count += 1
@@ -137,7 +139,7 @@ class Camera_subscriber(Node):
                             self.point_y.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_y.header.frame_id = f"yellow_pins_{self.yellow_count}" 
                             self.point_y.point.x = j[2] #j[0]  # Set x, y, z coordinates
-                            self.point_y.point.y = -j[0]*0.6#j[1]
+                            self.point_y.point.y = -j[0]*self.scaling #j[1]
                             self.point_y.point.z = -j[1]#j[2]
                             self.create_marker(self.point_y.point.x,self.point_y.point.y,self.point_y.point.z,self.yellow_count,'yellow')
                             self.yellow_count += 1
@@ -149,7 +151,7 @@ class Camera_subscriber(Node):
                             self.point_g.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_g.header.frame_id = f"green_pins_{self.green_count}"
                             self.point_g.point.x =  k[2]#k[0]  # Set x, y, z coordinates
-                            self.point_g.point.y = -k[0]*0.6#k[1]
+                            self.point_g.point.y = -k[0]*self.scaling #k[1]
                             self.point_g.point.z = -k[1]#k[2] 
                             self.create_marker(self.point_g.point.x,self.point_g.point.y,self.point_g.point.z,self.green_count,'green')
                             self.green_count += 1
@@ -162,7 +164,7 @@ class Camera_subscriber(Node):
                             self.point_b.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_b.header.frame_id = f"blue_pins_{self.blue_count}" 
                             self.point_b.point.x =  l[2]#l[0]  # Set x, y, z coordinates
-                            self.point_b.point.y = -l[0]*0.6#l[1]
+                            self.point_b.point.y = -l[0]*self.scaling #l[1]
                             self.point_b.point.z = -l[1]#l[2] 
                             self.get_logger().info("BLUE PIN DETECTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                             self.get_logger().info(f"blue pin x: {self.point_b.point.x}")
@@ -227,7 +229,7 @@ class Camera_subscriber(Node):
         marker.scale.y = 0.3
         marker.scale.z = 0.3
         marker.pose.position.x = (tp.point.x)
-        marker.pose.position.y = (tp.point.y)
+        marker.pose.position.y = (tp.point.y) + 0.05
         marker.pose.position.z =(tp.point.z)
         print(f"namespace:{ns},x:{marker.pose.position.x}, y:{marker.pose.position.y},z:{marker.pose.position.z}")
         marker.pose.orientation.x = 0.0

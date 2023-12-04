@@ -244,7 +244,7 @@ class MoveGun(Node):
 
         target.position.x = request.pose.position.x + self.tag_offset[0]
         target.position.y = request.pose.position.y + self.tag_offset[1]
-        target.position.z = request.pose.position.z + self.tag_offset[2] + 0.02
+        target.position.z = request.pose.position.z + self.tag_offset[2] + 0.01
         
         self.get_logger().info("Moving to pick position.")
         self.get_logger().info(f"Moving to z: {target.position.z}")    
@@ -368,7 +368,7 @@ class MoveGun(Node):
         # y = y + np.sign(y) * 0.10
         self.get_logger().info(f"{x}, {y}")
         yaw = np.arctan2(y, x)
-        pitch = np.arctan2(0.60 -z - 0.09, np.sqrt(x**2 + y**2) - 0.525)
+        pitch = np.arctan2(0.60 -z - 0.09, np.sqrt(x**2 + y**2) - 0.6)
         self.get_logger().info(f"{pitch}, {yaw}")
 
         target_p = Point()

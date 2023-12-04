@@ -1,5 +1,6 @@
 import time
 import rclpy
+import copy
 from rclpy.node import Node
 from std_srvs.srv import Empty
 from visualization_msgs.msg import MarkerArray
@@ -101,7 +102,7 @@ class ControlNode(Node):
             0.01, self.loop_cb, callback_group=self.loop_cbgrp
         )
         self._tf_timer = self.create_timer(
-            0.1, self.tf_cb, callback_group=self.tf_cbgrp
+            1/30, self.tf_cb, callback_group=self.tf_cbgrp
         )
         markerQoS = QoSProfile(
             depth=10, durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)
@@ -150,17 +151,17 @@ class ControlNode(Node):
 
         input_answer = await self._input_client.call_async(UserInput.Request())
         colour_target = input_answer.answer
+        self.get_logger().error(f'{colour_target}')
         # RUN ONCE!
         # # scan targets
         await self._calibration_client.call_async(Empty.Request()) #########################################
     
         if not self._run:
             await self.scan_targets()
-        self._run = True
+        
         # scan guns
         self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
 
-        self.get_logger().info(f"Gun 1 coordinates: ({self.t1.position.x},{self.t1.position.y},{self.t1.position.z})")
 
         # wait for user input
 
@@ -168,16 +169,24 @@ class ControlNode(Node):
         while self.t1.position.x is None:
             pass
         
+        self.get_logger().info(f"Gun 1 coordinates: ({self.t1.position.x},{self.t1.position.y},{self.t1.position.z})")
+
         self.get_logger().info("grabbing gun!")
+        for k in range(25):
+            time.sleep(0.1)
+
+        if not self._run:
+            self.first_t = copy.deepcopy(self.t1)
+            self.last_t = copy.deepcopy(self.t2)
+
+        self._run = True
         # if self.t1.position.x != None:
         if self.marker_count < 2:
             self.get_logger().info(f"{self.t1}")
-            self.last_t = self.t1
-            self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t1))
+            self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.first_t))
             self.gun1 = True
         else:
-            self.last_t = self.t2
-            self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t2))
+            self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.last_t))
             self.gun1 = False
 
         # # aim
@@ -188,10 +197,9 @@ class ControlNode(Node):
             
             if colour_target in m.ns:
                 if self.marker_count == 2 and self.gun1:
-                    self.place_future = await self._place_client.call_async(Grab.Request(pose=self.last_t))
+                    self.place_future = await self._place_client.call_async(Grab.Request(pose=self.first_t))
                     self.gun1 = False
-                    self.last_t = self.t2
-                    self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.t2))
+                    self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.last_t))
                 target_pose = m.pose.position
                 await self._aim_client.call_async(Target.Request(target=target_pose))
                 # shoot service
@@ -206,9 +214,12 @@ class ControlNode(Node):
                 self.marker_count += 1 
                 self.get_logger().info(f"{self.marker_count}")
             
-            
-        
-        self.place_future = await self._place_client.call_async(Grab.Request(pose=self.last_t))
+        if self.marker_count <= 2 and self.gun1:
+            self.get_logger().info(f"{self.first_t}")
+            self.place_future = await self._place_client.call_async(Grab.Request(pose=self.first_t))
+        else:
+            self.get_logger().info(f"{self.last_t}")
+            self.place_future = await self._place_client.call_async(Grab.Request(pose=self.last_t))
         await self._calibration_client.call_async(Empty.Request()) 
         return
 

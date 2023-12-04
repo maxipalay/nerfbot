@@ -4,11 +4,11 @@
         <arg name="rviz_config" value="$(find-pkg-share control)/rviz.config.rviz" />
         <arg name="robot_ip" value="panda0.robot"/>
     </include> 
-    <include file="$(find-pkg-share realsense2_camera)/launch/rs_launch.py">
-      <arg name="depth_module.profile" value="1280x720x30"/>
+    <!-- <include file="$(find-pkg-share realsense2_camera)/launch/rs_launch.py"> -->
+      <!-- <arg name="depth_module.profile" value="1280x720x30"/>
       <arg name="pointcloud.enable" value="true"/>
       <arg name="align_depth.enable" value="true"/>
-    </include> 
+    </include>  -->
     
     <node pkg="control" exec="control" />
 
