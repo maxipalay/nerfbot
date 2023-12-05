@@ -36,7 +36,7 @@ from geometry_msgs.msg import Vector3, Pose, PoseStamped, Quaternion
 
 
 class MoveItAPI():
-"""
+    """
     MoveGun node that achieves different gun-interaction features
 
     Args:
