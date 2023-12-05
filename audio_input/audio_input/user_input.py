@@ -9,6 +9,22 @@ import speech_recognition as sr
 from trajectory_interfaces.srv import UserInput
 
 def recognize_speech_from_mic(recognizer, microphone):
+    """Recognize speech from a microphone.
+
+    Args:
+        recognizer (SpeechRecognizer): An instance of the speech recognition Recognizer class.
+        microphone (Microphone): An instance of the speech recognition Microphone class.
+
+    Raises:
+        TypeError: If `recognizer` is not an instance of Recognizer.
+        TypeError: If `microphone` is not an instance of Microphone.
+
+    Returns:
+        dict: A dictionary containing recognition results.
+            - 'success' (bool): True if recognition was successful, False otherwise.
+            - 'error' (str): An error message if an error occurred during recognition.
+            - 'transcription' (str): The recognized speech transcription if successful, None otherwise.
+    """
     if not isinstance(recognizer, sr.Recognizer):
         raise TypeError("`recognizer` must be `Recognizer` instance")
 
@@ -36,12 +52,32 @@ def recognize_speech_from_mic(recognizer, microphone):
     return response
 
 class MinimalService(Node):
+    """
+    A MinimalService node that could help with audio user input
+
+    Args:
+    ----
+        Node (ros node):
+
+        SERVICE:
+        input:user input [UserInput]
+
+    """
 
     def __init__(self):
         super().__init__('minimal_service')
         self.srv = self.create_service(UserInput, 'input', self.user_input_callback)
 
     def user_input_callback(self, request, response):
+        """A callback function for processing user input.
+
+        Args:
+            request (UserInput): An instance of the UserInput message representing the user's request.
+            response (UserInput.Response): An instance of the UserInput response message.
+
+        Returns:
+            UserInput.Response: The processed user input stored in the response message.
+        """
         SHOWN_WORDS = ["red", "blue", "yellow", "green"]
         WORDS = ["red", "blue", "yellow", "green", "matt"]
         PROMPT_LIMIT = 5

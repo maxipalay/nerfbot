@@ -19,6 +19,26 @@ from trigger_interfaces.srv import Fire
 from tf2_ros import TransformBroadcaster
 
 class ControlNode(Node):
+    """
+    A Control node that could control the robot to achieve different gun shooting
+
+    Args:
+    ----
+        Node (ros node):
+
+        CLIENT:
+        input:user input [UserInput]
+        coordinates: pin coordinates [Empty]
+        target_scan: target scan request [TargetScanRequest]
+        gun_scan: gun scan request [Empty]
+        grab: grab request [Grab]
+        place: place back gun request [Grab]
+        cali: calibration [Empty]
+        aim: gun aiming [Target]
+        fire: gun firing [Fire]
+
+    """
+
     def __init__(self):
         super().__init__("control")
         # Broadcast a camera frame
@@ -261,6 +281,11 @@ class ControlNode(Node):
             self.get_logger().debug(f"Extrapolation exception: {e}")
 
     def marker_cb(self, msg):
+        """store the pin positions in markerArrays
+
+        Args:
+            msg (MarkerArray): Array storing Markers
+        """
         for given_m in msg.markers:
             duplicate = False
             x = given_m.pose.position.x
