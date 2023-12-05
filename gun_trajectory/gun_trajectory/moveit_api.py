@@ -36,6 +36,23 @@ from geometry_msgs.msg import Vector3, Pose, PoseStamped, Quaternion
 
 
 class MoveItAPI():
+"""
+    MoveGun node that achieves different gun-interaction features
+
+    Args:
+    ----
+        Node (rclpy.node.Node): Super class of the writer node.
+
+    Attrbutes
+    ---------
+        _node: The ROS 2 Node associated with the MoveItAPI.
+        _planning_group (str): The name of the planning group for MoveIt.
+        _gripper_action (str): The name of the gripper action for MoveIt.
+        _homing_action (str): The name of the homing action for MoveIt.
+        _pipeline_id (str): The ID of the MoveIt pipeline.
+        _constraints_link (str): The link for motion planning constraints.
+
+    """
 
     def __init__(self, node: Node, planning_group: str, gripper_action: str,
                  pipeline_id: str, constraints_link: str):
@@ -85,7 +102,19 @@ class MoveItAPI():
 
     async def move_gripper(self, width: float,
                            speed: float = 0.5, force: float = 10.0) -> (bool, Grasp.Result()):
-        """Move the gripper to a specified position."""
+        """
+        Move the gripper to a specified position.
+
+        Args:
+            width (float): The desired width of the gripper.
+            speed (float, optional): The speed of the gripper movement (default is 0.5).
+            force (float, optional): The force applied by the gripper (default is 10.0).
+
+        Returns
+            Tuple[bool, Grasp.Result]: A tuple containing a boolean indicating the success of the operation
+            and the result of the gripper movement.
+
+        """
         req = Grasp.Goal()
         req.width = width
         req.speed = speed
@@ -101,7 +130,14 @@ class MoveItAPI():
         return False, result.result
 
     async def home_gripper(self) -> (bool, Homing.Result()):
-        '''Fully open the gripper.'''
+        """
+        Fully open the gripper.
+
+        Returns
+            Tuple[bool, Homing.Result]: A tuple containing a boolean indicating the success of the homing operation
+            and the result of the gripper homing.
+
+        """
         req = Homing.Goal()
 
         future = await self._node._homing_action_client.send_goal_async(req)
@@ -122,6 +158,19 @@ class MoveItAPI():
         return planning_scene
 
     async def compute_ik(self, target_pose: Pose, hint_robot_state = None, constraints = None) -> (bool, RobotState):
+        """
+        Compute Inverse Kinematics (IK) for a target pose.
+
+        Args:
+            target_pose (Pose): The target pose for IK computation.
+            hint_robot_state (RobotState, optional): A hint for the initial robot state (default is None).
+            constraints (Constraints, optional): Additional constraints for IK computation (default is None).
+
+        Returns
+            Tuple[bool, Optional[RobotState]]: A tuple containing a boolean indicating the success of the IK computation
+            and the resulting robot state. If no IK solution is found, returns (False, None).
+
+        """
         # GETTING THE ROBOT STATE FROM THE SCENE
         # Request the planning scene Planning Scene Request
         planning_scene = await self.get_planning_scene()
@@ -162,6 +211,20 @@ class MoveItAPI():
         return False, None
 
     async def request_motion_plan(self, goal_state, goal_orientation, start_state, execute):
+        """
+        Request a motion plan for robot movement.
+
+        Args:
+            goal_state (Optional[RobotState]): The goal robot state for the motion plan (default is None).
+            goal_orientation (Optional[Quaternion]): The goal orientation for the motion plan (default is None).
+            start_state (Optional[RobotState]): The starting robot state for the motion plan (default is None).
+            execute (bool): Flag indicating whether to execute the motion plan.
+
+        Returns
+            Tuple[bool, Optional[MotionPlanResponse]]: A tuple containing a boolean indicating the success of the motion plan
+            and the resulting motion plan response. If no motion plan is found, returns (False, None).
+
+        """
         planning_scene = await self.get_planning_scene()
         # Assemble the motion plan request
         ts = self._node.get_clock().now().to_msg()  # timestamp
@@ -402,10 +465,18 @@ class MoveItAPI():
         ps.scene.world.collision_objects.append(col_obj)
         self._node.pscene_pub.publish(ps.scene)
 
-    async def request_execute(self,
-                              trajectory) -> (bool,
-                                                                  ExecuteTrajectory.Result()):
-        """Request execution of motion plan."""
+    async def request_execute(self,trajectory) -> (bool,ExecuteTrajectory.Result()):
+        """
+        Request execution of a motion plan.
+
+        Args:
+            trajectory: The trajectory to be executed.
+
+        Returns
+            Tuple[bool, ExecuteTrajectory.Result]: A tuple containing a boolean indicating the success of the execution
+            and the result of the execution.
+
+        """
         execute_request = ExecuteTrajectory.Goal()
         execute_request.trajectory = trajectory
         future_response = await self._node._execute_client.send_goal_async(execute_request)
@@ -420,7 +491,16 @@ class MoveItAPI():
             return True, execute_response
 
     async def move_cartesian(self, pose):
+        """
+        Move the robot along a Cartesian path to the specified pose.
 
+        Args:
+            pose: The target pose for the Cartesian path.
+
+        Returns:
+            None
+
+        """
         # cartesian path request
 
         planning_scene = await self.get_planning_scene()

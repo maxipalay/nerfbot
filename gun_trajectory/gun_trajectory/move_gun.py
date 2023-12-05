@@ -168,7 +168,8 @@ class MoveGun(Node):
         self._target_scan_index = 0
 
     async def move_cart_callback(self, request, response):
-        """move cartesian callback function
+        """
+        move cartesian callback function
 
         Args:
             request (Grab_request): the Grab msg
@@ -181,7 +182,8 @@ class MoveGun(Node):
         return response
 
     async def grip_callback(self, request, response):
-        """grip callback function
+        """
+        grip callback function
 
         Args:
         ----
@@ -197,7 +199,8 @@ class MoveGun(Node):
         return response
     
     async def set_payload(self, weight:float):
-        """set  payload function
+        """
+        set  payload function
 
         Args:
             weight (float): weight of the payload
@@ -221,7 +224,8 @@ class MoveGun(Node):
         await self.controller_client.call_async(request)
 
     async def shoot_SrvCallback(self, request, response):
-        """gun shooting callback function to 
+        """
+        gun shooting callback function to 
 
         Args:
         ----
@@ -249,7 +253,8 @@ class MoveGun(Node):
         return response
     
     async def grab_gun_callback(self, request, response):
-        """grab gun callback function to grab the gun
+        """
+        grab gun callback function to grab the gun
 
         Args:
         ----
@@ -320,7 +325,8 @@ class MoveGun(Node):
         return response
     
     async def place_gun_callback(self,request,response):
-        """Replaces gun on the mount after shooting
+        """
+        Replaces gun on the mount after shooting
 
         Args:
         ----
@@ -384,7 +390,8 @@ class MoveGun(Node):
         
 
     async def target_scan_callback(self, request, response):
-        """Target scans call back function
+        """
+        Target scans call back function
 
         Args:
         ----
@@ -426,7 +433,8 @@ class MoveGun(Node):
         return response
 
     async def gun_scan_callback(self, request, response):
-        """Gun scan call back function
+        """
+        Gun scan call back function
 
         Args:
         ----
@@ -494,14 +502,15 @@ class MoveGun(Node):
         return response
 
     def find_pose(self, x, y, z):
-        """Calculate target positions xyz and Quaternions
+        """
+        Calculate target positions xyz and Quaternions
 
         Args:
             x (float): positions x
             y (float): positions y
             z (float): positions z
 
-        Returns:
+        Returns
             Point: target position xyz
             Tuple[float, float, float, float]: an quaternion
         """
