@@ -1,3 +1,23 @@
+"""
+A Control node that could control the robot with various clients
+
+Clients
+-------
+    input:user input [UserInput]
+    coordinates: pin coordinates [Empty]
+    target_scan: target scan request [TargetScanRequest]
+    gun_scan: gun scan request [Empty]
+    grab: grab request [Grab]
+    place: place back gun request [Grab]
+    cali: calibration [Empty]
+    aim: gun aiming [Target]
+    fire: gun firing [Fire]
+
+Returns
+-------
+    None
+
+"""
 import time
 import rclpy
 import copy
@@ -24,18 +44,7 @@ class ControlNode(Node):
 
     Args:
     ----
-        Node (ros node):
-
-        CLIENT:
-        input:user input [UserInput]
-        coordinates: pin coordinates [Empty]
-        target_scan: target scan request [TargetScanRequest]
-        gun_scan: gun scan request [Empty]
-        grab: grab request [Grab]
-        place: place back gun request [Grab]
-        cali: calibration [Empty]
-        aim: gun aiming [Target]
-        fire: gun firing [Fire]
+        Node (ros node): superclass of the ros node 
 
     """
 

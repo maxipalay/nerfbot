@@ -1,3 +1,24 @@
+"""
+MoveGun node that achieves different gun-interaction features
+
+Services
+--------
+    /aim [Target]: Write the characters on the board.
+    /gun_scan [Empty]: A service for scanning the gun.
+    /target_scan [TargetScanRequest]: A service for scanning the target.
+    /grab [Grab]: A service for grabbing the gun.
+    /place [Grab]: A service for placing the gun.
+    /cali [Empty]: A service for calibrating the gun grip.
+Clients
+-------
+    /controller_manager/switch_controller [SwitchController]: A client for switching controllers.
+    /service_server/set_load [SetLoad]: A client for setting payload load.
+
+Returns
+-------
+    None
+
+"""
 import numpy as np
 
 import rclpy
@@ -16,6 +37,34 @@ from moveit_msgs.msg import RobotState, JointConstraint, Constraints
 from sensor_msgs.msg import JointState
 
 class MoveGun(Node):
+"""
+    MoveGun node that achieves different gun-interaction features
+
+    Args:
+    ----
+        Node (rclpy.node.Node): Super class of the writer node.
+
+    Attrbutes
+    ---------
+        scan_x (float): The X-coordinate for scanning.
+        scan_y (float): The Y-coordinate for scanning.
+        scan_z (float): The Z-coordinate for scanning.
+        scan_forward (float): The forward distance for scanning.
+        scan_up (float): The upward distance for scanning.
+        tag_offset (np.array): The position of the end effector relative to the tag.
+        ready_offset (float): The offset for the ready position.
+        planning_group (str): The name of the planning group for the Panda manipulator.
+        gripper_action (str): The name of the gripper action for the Panda gripper.
+        pipeline_id (str): The ID of the MoveIt pipeline.
+        constraints_link (str): The link for motion planning constraints.
+        executed (bool): Flag indicating whether a motion plan has been executed.
+        _scan_positions (List[Pose]): List of Pose objects representing scanning positions.
+        _scan_hints (List[RobotState]): List of RobotState objects representing hints for scanning.
+        _constraints (List[Constraints]): List of Constraints objects representing joint constraints for scanning.
+        _scanning_targets (bool): Flag indicating whether the robot is currently scanning targets.
+        _target_scan_index (int): Index indicating the current target scan in progress.
+
+    """
     def __init__(self):
         super().__init__("move_gun")
 
@@ -119,15 +168,40 @@ class MoveGun(Node):
         self._target_scan_index = 0
 
     async def move_cart_callback(self, request, response):
+        """move cartesian callback function
+
+        Args:
+            request (Grab_request): the Grab msg
+            response (Grab_response): Empty msg
+
+        Returns:
+            Grab_response: Empty msg
+        """
         await self.moveit_api.move_cartesian(request.pose)
         return response
 
     async def grip_callback(self, request, response):
+        """grip callback function
+
+        Args:
+        ----
+            request (Empty): Empty msg
+            response (Empty): Empty msg
+
+        Returns
+        -------
+            Empty: Empty msg
+        """
         await self.set_payload(0.0)
         await self.moveit_api.move_gripper(0.025, 0.05, 10.0)
         return response
     
     async def set_payload(self, weight:float):
+        """set  payload function
+
+        Args:
+            weight (float): weight of the payload
+        """
         # SET PAYLOAD
 
         # deactivate controller
@@ -147,6 +221,17 @@ class MoveGun(Node):
         await self.controller_client.call_async(request)
 
     async def shoot_SrvCallback(self, request, response):
+        """gun shooting callback function to 
+
+        Args:
+        ----
+            request (Target_Request): pin location
+            response (Target_Response): Empty msg
+
+        Returns
+        -------
+            Empty: Empty msg
+        """
         self.get_logger().info("Found target")
         target_x = request.target.x
         target_y = request.target.y
@@ -164,6 +249,17 @@ class MoveGun(Node):
         return response
     
     async def grab_gun_callback(self, request, response):
+        """grab gun callback function to grab the gun
+
+        Args:
+        ----
+            request (Grab_Request): pin location
+            response (Grab_Response): Empty msg
+
+        Returns
+        -------
+            Grab_Response: Empty msg
+        """
        
         self.get_logger().info("Initiated grab")
         
@@ -224,9 +320,20 @@ class MoveGun(Node):
         return response
     
     async def place_gun_callback(self,request,response):
-        '''Replaces gun on the mount after shooting'''
-        self.get_logger().info("Initiated place")
+        """Replaces gun on the mount after shooting
 
+        Args:
+        ----
+            request (Grab_Request): gun location
+            response (Grab_Response): Empty msg
+
+        Returns
+        -------
+            Grab_Response: the response of Grab service
+        """
+
+        self.get_logger().info("Initiated place")
+        
         # move arm to starting location
         target = Pose()
         target.position.x = request.pose.position.x + self.tag_offset[0] + self.ready_offset
@@ -277,6 +384,17 @@ class MoveGun(Node):
         
 
     async def target_scan_callback(self, request, response):
+        """Target scans call back function
+
+        Args:
+        ----
+            request (TargetScanRequest_Request): target scan request
+            response (TargetScanRequest_Response): a bool msg if it needs more scans
+
+        Returns
+        -------
+            TargetScanRequest_Respon: a bool msg if it needs more scans
+        """
         self.get_logger().info(f"received target scan request. Current status: {self._scanning_targets}, {self._target_scan_index}")
 
         # if we're not running a scan already
@@ -308,6 +426,17 @@ class MoveGun(Node):
         return response
 
     async def gun_scan_callback(self, request, response):
+        """Gun scan call back function
+
+        Args:
+        ----
+            request (Empty): Empty msg
+            response (Empty): Empty msg
+
+        Returns
+        -------
+            Empty: Empty msg
+        """
         self.get_logger().info("Initiated gun scan")
 
         orientation = Quaternion(x=1.0,y=0.0,z=0.0,w=0.0)
@@ -326,7 +455,7 @@ class MoveGun(Node):
         #         orientation=orientation,
         #     ),
         # ]
-
+        
         self._scan_positions = [
             Pose(
                 position=Point(x=self.scan_forward, y=0.0, z=self.scan_up),
@@ -365,6 +494,17 @@ class MoveGun(Node):
         return response
 
     def find_pose(self, x, y, z):
+        """Calculate target positions xyz and Quaternions
+
+        Args:
+            x (float): positions x
+            y (float): positions y
+            z (float): positions z
+
+        Returns:
+            Point: target position xyz
+            Tuple[float, float, float, float]: an quaternion
+        """
         # y = y + np.sign(y) * 0.10
         self.get_logger().info(f"{x}, {y}")
         yaw = np.arctan2(y, x)

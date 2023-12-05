@@ -1,3 +1,15 @@
+"""
+MinimalService node that could help with audio user input.
+
+Services
+--------
+    input [UserInput]: user input.
+
+Returns
+-------
+    None
+
+"""
 import random
 import time
 
@@ -57,13 +69,9 @@ class MinimalService(Node):
 
     Args:
     ----
-        Node (ros node):
-
-        SERVICE:
-        input:user input [UserInput]
+        Node (ros node): a node's superclass
 
     """
-
     def __init__(self):
         super().__init__('minimal_service')
         self.srv = self.create_service(UserInput, 'input', self.user_input_callback)
