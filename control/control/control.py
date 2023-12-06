@@ -201,6 +201,7 @@ class ControlNode(Node):
         )
 
         self.get_logger().info("grabbing gun!")
+        # this pause helped stabilize tf tree issues we were having
         for k in range(25):
             time.sleep(0.1)
 
@@ -209,7 +210,7 @@ class ControlNode(Node):
             self.last_t = copy.deepcopy(self.t2)
 
         self._run = True
-        # if self.t1.position.x != None:
+        
         if self.marker_count < 2:
             self.get_logger().info(f"{self.t1}")
             self._grab_future = await self._grab_client.call_async(
