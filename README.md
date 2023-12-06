@@ -35,7 +35,7 @@ Created by the authors:
 - Shoot
     - Node that carries out all moveit-interface services such as cartesian planning, IK planning, and gripper requests. 
 - Yolo
-    - Node that runs YOLO to find the pin with respect to the base of the Franka arm. 
+    - Node that runs YOLO to find the colored bowling pins with respect to the base of the Franka arm and display them as markers in Rviz2. 
 - User_Input
     - Node that listens to the user's audio input to set the color of the targeted pins. 
 - Trigger
