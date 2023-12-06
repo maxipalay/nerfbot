@@ -24,11 +24,12 @@ def recognize_speech_from_mic(recognizer, microphone):
     Recognize speech from a microphone.
 
     Args:
+    ----
         recognizer (SpeechRecognizer): An instance of the speech recognition Recognizer class.
         microphone (Microphone): An instance of the speech recognition Microphone class.
 
     Raises
-    -------
+    ------
         TypeError: If `recognizer` is not an instance of Recogniclearzer.
         TypeError: If `microphone` is not an instance of Microphone.
 
@@ -87,12 +88,14 @@ class UsersInput(Node):
         Process user input.
 
         Args:
+        ----
             request (UserInput): UserInput message representing the user's request.
             response (UserInput.Response): An instance of the UserInput response message.
 
         Returns
         -------
             UserInput.Response: The processed user input stored in the response message.
+
         """
         WORDS = ["red", "blue", "yellow", "green", "matt"]
         PROMPT_LIMIT = 5

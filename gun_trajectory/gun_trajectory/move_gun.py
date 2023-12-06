@@ -1,5 +1,5 @@
 """
-MoveGun node that achieves different gun-interaction features
+MoveGun node that achieves different gun-interaction features.
 
 Services
 --------
@@ -38,7 +38,7 @@ from sensor_msgs.msg import JointState
 
 class MoveGun(Node):
     """
-    MoveGun node that achieves different gun-interaction features
+    MoveGun node that achieves different gun-interaction features.
 
     Args:
     ----
@@ -226,7 +226,7 @@ class MoveGun(Node):
 
     async def move_cart_callback(self, request, response):
         """
-        move cartesian callback function.
+        Move cartesian callback function.
 
         Args:
         ----
@@ -243,7 +243,7 @@ class MoveGun(Node):
 
     async def grip_callback(self, request, response):
         """
-        grip callback function
+        Grip callback function.
 
         Args:
         ----
@@ -286,7 +286,7 @@ class MoveGun(Node):
 
     async def shoot_SrvCallback(self, request, response):
         """
-        gun shooting callback function to
+        Shoot gun callback function to shoot.
 
         Args:
         ----
@@ -296,6 +296,7 @@ class MoveGun(Node):
         Returns
         -------
             Empty: Empty msg
+
         """
         self.get_logger().info("Found target")
         target_x = request.target.x
@@ -312,7 +313,7 @@ class MoveGun(Node):
 
     async def grab_gun_callback(self, request, response):
         """
-        grab gun callback function to grab the gun
+        Grab gun callback function to grab the gun.
 
         Args:
         ----
@@ -322,8 +323,8 @@ class MoveGun(Node):
         Returns
         -------
             Grab_Response: Empty msg
-        """
 
+        """
         self.get_logger().info("Initiated grab")
 
         # move arm to starting location
@@ -388,18 +389,18 @@ class MoveGun(Node):
 
     async def place_gun_callback(self, request, response):
         """
-        Replaces gun on the mount after shooting
+        Replace gun on the mount after shooting.
 
         Args:
         ----
-            request (Grab_Request): gun location
-            response (Grab_Response): Empty msg
+            request (Grab_Request): gun location.
+            response (Grab_Response): Empty msg.
 
         Returns
         -------
-            Grab_Response: the response of Grab service
-        """
+            Grab_Response: the response of Grab service.
 
+        """
         self.get_logger().info("Initiated place")
 
         # move arm to starting location
@@ -454,16 +455,17 @@ class MoveGun(Node):
 
     async def target_scan_callback(self, request, response):
         """
-        Target scans call back function
+        Target scans call back function.
 
         Args:
         ----
-            request (TargetScanRequest_Request): target scan request
-            response (TargetScanRequest_Response): a bool msg if it needs more scans
+            request (TargetScanRequest_Request): target scan request.
+            response (TargetScanRequest_Response): a bool msg if it needs more scans.
 
         Returns
         -------
-            TargetScanRequest_Respon: a bool msg if it needs more scans
+            TargetScanRequest_Respon: a bool msg if it needs more scans.
+
         """
         self.get_logger().info(
             "received target scan request."
@@ -502,16 +504,17 @@ class MoveGun(Node):
 
     async def gun_scan_callback(self, request, response):
         """
-        Gun scan call back function
+        Scan gun call back function.
 
         Args:
         ----
-            request (Empty): Empty msg
-            response (Empty): Empty msg
+            request (Empty): Empty msg.
+            response (Empty): Empty msg.
 
         Returns
         -------
-            Empty: Empty msg
+            Empty: Empty msg.
+
         """
         self.get_logger().info("Initiated gun scan")
 
@@ -525,7 +528,7 @@ class MoveGun(Node):
         ]
 
         self.get_logger().info("Starting gun scan")
-# with '#' will be ignored, and an empty message aborts the commit.n scan")
+        # with '#' will be ignored, and an empty message aborts the commit.n scan")
 
         await self.moveit_api.plan_and_execute(
             self.moveit_api.plan_position_and_orientation, self._scan_positions[0]
@@ -536,16 +539,19 @@ class MoveGun(Node):
 
     def find_pose(self, x, y, z):
         """
-        Calculate target positions xyz and Quaternions
+        Calculate target positions xyz and Quaternions.
 
         Args:
-            x (float): positions x
-            y (float): positions y
-            z (float): positions z
+        ----
+            x (float): positions x.
+            y (float): positions y.
+            z (float): positions z.
 
         Returns
-            Point: target position xyz
-            Tuple[float, float, float, float]: an quaternion
+        -------
+            Point: target position xyz.
+            Tuple[float, float, float, float]: an quaternion.
+
         """
         self.get_logger().info(f"{x}, {y}")
         yaw = np.arctan2(y, x)
@@ -565,7 +571,7 @@ class MoveGun(Node):
 
 
 def entry_point(args=None):
-    """The entry_point function."""
+    """Start entry_point function."""
     rclpy.init(args=args)
     move_gun = MoveGun()
 

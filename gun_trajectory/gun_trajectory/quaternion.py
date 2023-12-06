@@ -7,12 +7,15 @@ def euler_to_quaternion(roll, pitch, yaw):
     Convert Euler angles to a quaternion.
 
     Args:
+    ----
         roll (float): Rotation around the x-axis (roll) in radians.
         pitch (float): Rotation around the y-axis (pitch) in radians.
         yaw (float): Rotation around the z-axis (yaw) in radians.
 
-    Returns:
+    Returns
+    -------
         Quaternion: The quaternion representing the input Euler angles.
+
     """
     qx = np.sin(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2) - np.cos(
         roll / 2
@@ -40,10 +43,12 @@ def quaternion_multiply(q0, q1):
     Multiplies two quaternions.
 
     Input
+    -----
     :param q0: A 4 element array containing the first quaternion (q01, q11, q21, q31)
     :param q1: A 4 element array containing the second quaternion (q02, q12, q22, q32)
 
     Output
+    ------
     :return: A 4 element array containing the final quaternion (q03,q13,q23,q33)
 
     """

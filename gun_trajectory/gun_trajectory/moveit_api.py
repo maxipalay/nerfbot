@@ -1,25 +1,25 @@
 """
-    A MoveIt Api that allows the user to plan and execute paths easily.
+A MoveIt Api that allows the user to plan and execute paths easily.
 
-    Uses an already running move group node.
+Uses an already running move group node.
 
-    PUBLISHERS:
-        planning_scene (moveit_msgs/msg/PlanningScene): represents all the information
-        needed to compute motion plans
+PUBLISHERS:
+    planning_scene (moveit_msgs/msg/PlanningScene): represents all the information
+    needed to compute motion plans
 
-    SERVICE CLIENTS:
-        compute_ik (moveit_msgs/srv/GetPositionIK):
-            Computes Inverse Kinematics.
-        get_planning_scene (moveit_msgs/srv/GetPlanningScene) -
-            Gets the planning scene message.
+SERVICE CLIENTS:
+    compute_ik (moveit_msgs/srv/GetPositionIK):
+        Computes Inverse Kinematics.
+    get_planning_scene (moveit_msgs/srv/GetPlanningScene) -
+        Gets the planning scene message.
 
-    ACTION CLIENTS:
-        execute_trajectory (moveit_msgs/action/ExecuteTrajectory):
-            Executes a planned joint trajectory.
-        move_action (moveit_msgs/action/MoveGroup):
-            Plans and executes the robot's trajectory.
-        grippercommand (control_msgs/GripperCommand.action):
-            Controls movement of the gripper.
+ACTION CLIENTS:
+    execute_trajectory (moveit_msgs/action/ExecuteTrajectory):
+        Executes a planned joint trajectory.
+    move_action (moveit_msgs/action/MoveGroup):
+        Plans and executes the robot's trajectory.
+    grippercommand (control_msgs/GripperCommand.action):
+        Controls movement of the gripper.
 
 """
 from rclpy.node import Node
@@ -46,7 +46,7 @@ from geometry_msgs.msg import Vector3, Pose, PoseStamped, Quaternion
 
 class MoveItAPI:
     """
-    MoveGun node that achieves different gun-interaction features
+    MoveGun node that achieves different gun-interaction features.
 
     Args:
     ----
@@ -132,11 +132,13 @@ class MoveItAPI:
         Move the gripper to a specified position.
 
         Args:
+        ----
             width (float): The desired width of the gripper.
             speed (float, optional): The speed of the gripper movement (default is 0.5).
             force (float, optional): The force applied by the gripper (default is 10.0).
 
         Returns
+        -------
             Tuple[bool, Grasp.Result]: A tuple containing a bool indicating the operation's success
             and the result of the gripper movement.
 
@@ -157,9 +159,10 @@ class MoveItAPI:
 
     async def home_gripper(self) -> (bool, Homing.Result()):
         """
-        Fully open the gripper.
+        Open the gripper fully.
 
         Returns
+        -------
             Tuple[bool, Homing.Result]: A tuple with booleans indicating
             the homing operation's success and the result of the gripper homing.
 
@@ -190,11 +193,13 @@ class MoveItAPI:
         Compute Inverse Kinematics (IK) for a target pose.
 
         Args:
+        ----
             target_pose (Pose): The target pose for IK computation.
             hint_robot_state (RobotState, optional): A hint for the initial robot state.
             constraints (Constraints, optional): constraints for IK computation.
 
         Returns
+        -------
             Tuple[bool, Optional[RobotState]]: tuple with booleans
             indicating IK computation's success and the resulting robot state.
             If no IK solution is found, returns (False, None).
@@ -245,12 +250,14 @@ class MoveItAPI:
         Request a motion plan for robot movement.
 
         Args:
+        ----
             goal_state (Optional[RobotState]): The goal robot state for the motion plan.
             goal_orientation (Optional[Quaternion]): The goal orientation for the motion plan.
             start_state (Optional[RobotState]): The starting robot state for the motion plan.
             execute (bool): Flag indicating whether to execute the motion plan.
 
         Returns
+        -------
             Tuple[bool, Optional[MotionPlanResponse]]: A tuple with a boolean
             hints motion plan's success and the resulting motion plan response.
             If no motion plan is found, returns (False, None).
@@ -381,7 +388,7 @@ class MoveItAPI:
         """
         Plan position without orientation.
 
-        Args
+        Args:
         ----
             target - desired end position
             start_state - robot start if not current
@@ -407,7 +414,7 @@ class MoveItAPI:
         """
         Plan orientation without position.
 
-        Args
+        Args:
         ----
             target - desired end-effector orientation
             start_state - robot start if not current
@@ -446,7 +453,7 @@ class MoveItAPI:
         """
         Plan both position and orientation.
 
-        Args
+        Args:
         ----
             target - desired end-effector position and orientation
             start_state - robot start if not current
@@ -457,7 +464,6 @@ class MoveItAPI:
             plan - motion plan for move node
 
         """
-
         success, goal_state = await self.compute_ik(target, hint_state, constraints)
 
         # Plan trajectory to desired pose
@@ -482,7 +488,7 @@ class MoveItAPI:
         """
         Plan AND execute.
 
-        Args
+        Args:
         ----
             planner - planning function to use
             start_state - robot start if not current
@@ -507,7 +513,7 @@ class MoveItAPI:
         """
         Add collision object to planning scene.
 
-        Args
+        Args:
         ----
             item - item to be added
             pose_stamped - position of item added(Pose_stamped message)
