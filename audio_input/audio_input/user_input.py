@@ -1,5 +1,5 @@
 """
-MinimalService node that could help with audio user input.
+UserInput node that could help with audio user input.
 
 Services
 --------
@@ -20,6 +20,7 @@ import speech_recognition as sr
 
 from trajectory_interfaces.srv import UserInput
 
+# Start Citation [1]
 def recognize_speech_from_mic(recognizer, microphone):
     """Recognize speech from a microphone.
 
@@ -62,10 +63,11 @@ def recognize_speech_from_mic(recognizer, microphone):
         response["error"] = "Unable to recognize speech"
 
     return response
+# End Citation [1]
 
-class MinimalService(Node):
+class UserInput(Node):
     """
-    A MinimalService node that could help with audio user input
+    A UserInput node that could help with audio user input
 
     Args:
     ----
@@ -73,7 +75,7 @@ class MinimalService(Node):
 
     """
     def __init__(self):
-        super().__init__('minimal_service')
+        super().__init__('user_input')
         self.srv = self.create_service(UserInput, 'input', self.user_input_callback)
 
     def user_input_callback(self, request, response):
@@ -93,24 +95,25 @@ class MinimalService(Node):
         recognizer = sr.Recognizer()
         microphone = sr.Microphone()
 
+        final_guess = None
         instructions = (f"Choose the following target colour:\n {SHOWN_WORDS}\n")
 
-        print(instructions)
+        self.get_logger().info(f"{instructions}")
         time.sleep(1)
         for j in range(PROMPT_LIMIT):
-            print('Speak!')
+            self.get_logger().info(f"Speak!")
             guess = recognize_speech_from_mic(recognizer, microphone)
             if guess["transcription"]:
                 if guess["transcription"].lower() not in WORDS:
-                    print("Sorry, you can't choose that as a target.\n")
+                    self.get_logger().info("Sorry, you can't choose that as a target.\n")
                     continue
                 else:
                     break
             if not guess["success"]:
                 break
-            print("I didn't catch that. What did you say?\n")
+            self.get_logger().info("I didn't catch that. What did you say?\n")
         final_guess = guess['transcription']
-        print(f"You said: {final_guess}\n")
+        self.get_logger().info(f"You said: {final_guess}\n")
 
         response.answer = final_guess
         return response
@@ -118,6 +121,6 @@ class MinimalService(Node):
 
 def entry_point(args=None):
     rclpy.init(args=args)
-    minimal_service = MinimalService()
-    rclpy.spin(minimal_service)
+    user_input = UserInput()
+    rclpy.spin(user_input)
 
