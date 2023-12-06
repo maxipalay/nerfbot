@@ -522,6 +522,9 @@ class MoveGun(Node):
                 position=Point(x=self.scan_forward, y=0.0, z=self.scan_up),
                 orientation=orientation,
             ),
+        ]
+
+        self.get_logger().info("Starting gun scan")
 # with '#' will be ignored, and an empty message aborts the commit.n scan")
 
         await self.moveit_api.plan_and_execute(
