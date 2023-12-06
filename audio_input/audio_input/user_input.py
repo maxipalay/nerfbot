@@ -20,6 +20,7 @@ import speech_recognition as sr
 
 from trajectory_interfaces.srv import UserInput
 
+
 # Start Citation [1]
 def recognize_speech_from_mic(recognizer, microphone):
     """Recognize speech from a microphone.
@@ -48,11 +49,7 @@ def recognize_speech_from_mic(recognizer, microphone):
         recognizer.adjust_for_ambient_noise(source)
         audio = recognizer.listen(source)
 
-    response = {
-        "success": True,
-        "error": None,
-        "transcription": None
-    }
+    response = {"success": True, "error": None, "transcription": None}
 
     try:
         response["transcription"] = recognizer.recognize_google(audio)
@@ -63,7 +60,10 @@ def recognize_speech_from_mic(recognizer, microphone):
         response["error"] = "Unable to recognize speech"
 
     return response
+
+
 # End Citation [1]
+
 
 class UsersInput(Node):
     """
@@ -74,9 +74,10 @@ class UsersInput(Node):
         Node (ros node): a node's superclass
 
     """
+
     def __init__(self):
-        super().__init__('user_input')
-        self.srv = self.create_service(UserInput, 'input', self.user_input_callback)
+        super().__init__("user_input")
+        self.srv = self.create_service(UserInput, "input", self.user_input_callback)
 
     def user_input_callback(self, request, response):
         """A callback function for processing user input.
@@ -96,7 +97,7 @@ class UsersInput(Node):
         microphone = sr.Microphone()
 
         final_guess = None
-        instructions = (f"Choose the following target colour:\n {SHOWN_WORDS}\n")
+        instructions = f"Choose the following target colour:\n {SHOWN_WORDS}\n"
 
         self.get_logger().info(f"{instructions}")
         time.sleep(1)
@@ -105,14 +106,16 @@ class UsersInput(Node):
             guess = recognize_speech_from_mic(recognizer, microphone)
             if guess["transcription"]:
                 if guess["transcription"].lower() not in WORDS:
-                    self.get_logger().info("Sorry, you can't choose that as a target.\n")
+                    self.get_logger().info(
+                        "Sorry, you can't choose that as a target.\n"
+                    )
                     continue
                 else:
                     break
             if not guess["success"]:
                 break
             self.get_logger().info("I didn't catch that. What did you say?\n")
-        final_guess = guess['transcription']
+        final_guess = guess["transcription"]
         self.get_logger().info(f"You said: {final_guess}\n")
 
         response.answer = final_guess
@@ -123,4 +126,3 @@ def entry_point(args=None):
     rclpy.init(args=args)
     user_input = UsersInput()
     rclpy.spin(user_input)
-

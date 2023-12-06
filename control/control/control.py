@@ -38,13 +38,14 @@ from trigger_interfaces.srv import Fire
 
 from tf2_ros import TransformBroadcaster
 
+
 class ControlNode(Node):
     """
     A Control node that could control the robot to achieve different gun shooting
 
     Args:
     ----
-        Node (ros node): superclass of the ros node 
+        Node (ros node): superclass of the ros node
 
     """
 
@@ -60,7 +61,7 @@ class ControlNode(Node):
         self._cam_hand_tf.transform.translation.y = -0.02
         self._cam_hand_tf.transform.translation.z = 0.065
         self._cam_hand_tf.transform.rotation = Quaternion(
-        x=0.707, y=0.0, z=0.707, w=0.0
+            x=0.707, y=0.0, z=0.707, w=0.0
         )
 
         self.camera_broadcaster.sendTransform(self._cam_hand_tf)  # publish transform
@@ -84,9 +85,7 @@ class ControlNode(Node):
         self._gun_client = self.create_client(
             Empty, "gun_scan", callback_group=self._cbgrp
         )
-        self._grab_client = self.create_client(
-            Grab, "grab", callback_group=self._cbgrp
-        )
+        self._grab_client = self.create_client(Grab, "grab", callback_group=self._cbgrp)
         self._place_client = self.create_client(
             Grab, "place", callback_group=self._cbgrp
         )
@@ -94,9 +93,7 @@ class ControlNode(Node):
             Empty, "cali", callback_group=self._cbgrp
         )
 
-        self._aim_client = self.create_client(
-            Target, "aim", callback_group=self._cbgrp
-        )
+        self._aim_client = self.create_client(Target, "aim", callback_group=self._cbgrp)
 
         self._shoot_client = self.create_client(
             Fire, "fire", callback_group=self._cbgrp
@@ -104,10 +101,10 @@ class ControlNode(Node):
 
         # # wait for services to become available
         while not self._input_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('input service not available, waiting again...')
+            self.get_logger().info("input service not available, waiting again...")
 
         while not self._vision_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('yolo service not available, waiting again...')
+            self.get_logger().info("yolo service not available, waiting again...")
 
         while not self._gun_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("gun scan service not available, waiting again...")
@@ -129,13 +126,20 @@ class ControlNode(Node):
             0.01, self.loop_cb, callback_group=self.loop_cbgrp
         )
         self._tf_timer = self.create_timer(
-            1/30, self.tf_cb, callback_group=self.tf_cbgrp
+            1 / 30, self.tf_cb, callback_group=self.tf_cbgrp
         )
         markerQoS = QoSProfile(
-            depth=10, durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)
-        
+            depth=10,
+            durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
+        )
+
         self.marker_pub = self.create_subscription(
-            MarkerArray, "visualization_marker_array", self.marker_cb, markerQoS, callback_group=self.marker_cbgrp)
+            MarkerArray,
+            "visualization_marker_array",
+            self.marker_cb,
+            markerQoS,
+            callback_group=self.marker_cbgrp,
+        )
 
         # variables
         self._markers = []  # store the MarkerArray
@@ -165,38 +169,36 @@ class ControlNode(Node):
 
         # run once
         self._run = False
-    
 
     async def loop_cb(self):
         """Main loop."""
 
         # calibrate gripper
-        
-        
-        self.get_logger().error('Waiting for Input.')
-        
+
+        self.get_logger().error("Waiting for Input.")
 
         input_answer = await self._input_client.call_async(UserInput.Request())
         colour_target = input_answer.answer
-        self.get_logger().error(f'{colour_target}')
+        self.get_logger().error(f"{colour_target}")
         # RUN ONCE!
         # # scan targets
-        await self._calibration_client.call_async(Empty.Request()) 
-    
+        await self._calibration_client.call_async(Empty.Request())
+
         if not self._run:
             await self.scan_targets()
-        
+
         # scan guns
         self._gun_scan_future = await self._gun_client.call_async(Empty.Request())
-
 
         # wait for user input
 
         # grab gun
         while self.t1.position.x is None:
             pass
-        
-        self.get_logger().info(f"Gun 1 coordinates: ({self.t1.position.x},{self.t1.position.y},{self.t1.position.z})")
+
+        self.get_logger().info(
+            f"Gun 1 coordinates: ({self.t1.position.x},{self.t1.position.y},{self.t1.position.z})"
+        )
 
         self.get_logger().info("grabbing gun!")
         for k in range(25):
@@ -210,23 +212,31 @@ class ControlNode(Node):
         # if self.t1.position.x != None:
         if self.marker_count < 2:
             self.get_logger().info(f"{self.t1}")
-            self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.first_t))
+            self._grab_future = await self._grab_client.call_async(
+                Grab.Request(pose=self.first_t)
+            )
             self.gun1 = True
         else:
-            self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.last_t))
+            self._grab_future = await self._grab_client.call_async(
+                Grab.Request(pose=self.last_t)
+            )
             self.gun1 = False
 
         # # aim
         self.get_logger().info(f"{self._markers}")
-        
+
         for m in self._markers:
             self.get_logger().info(f"\n{m}")
-            
+
             if colour_target in m.ns:
                 if self.marker_count == 2 and self.gun1:
-                    self.place_future = await self._place_client.call_async(Grab.Request(pose=self.first_t))
+                    self.place_future = await self._place_client.call_async(
+                        Grab.Request(pose=self.first_t)
+                    )
                     self.gun1 = False
-                    self._grab_future = await self._grab_client.call_async(Grab.Request(pose=self.last_t))
+                    self._grab_future = await self._grab_client.call_async(
+                        Grab.Request(pose=self.last_t)
+                    )
                 target_pose = m.pose.position
                 await self._aim_client.call_async(Target.Request(target=target_pose))
                 # shoot service
@@ -237,16 +247,20 @@ class ControlNode(Node):
                     req.gun_id = 1
 
                 await self._shoot_client.call_async(req)
-                self.marker_count += 1 
+                self.marker_count += 1
                 self.get_logger().info(f"{self.marker_count}")
-            
+
         if self.marker_count <= 2 and self.gun1:
             self.get_logger().info(f"{self.first_t}")
-            self.place_future = await self._place_client.call_async(Grab.Request(pose=self.first_t))
+            self.place_future = await self._place_client.call_async(
+                Grab.Request(pose=self.first_t)
+            )
         else:
             self.get_logger().info(f"{self.last_t}")
-            self.place_future = await self._place_client.call_async(Grab.Request(pose=self.last_t))
-        await self._calibration_client.call_async(Empty.Request()) 
+            self.place_future = await self._place_client.call_async(
+                Grab.Request(pose=self.last_t)
+            )
+        await self._calibration_client.call_async(Empty.Request())
         return
 
     def tf_cb(self):
@@ -300,8 +314,8 @@ class ControlNode(Node):
                 xp = stored_m.pose.position.x
                 yp = stored_m.pose.position.y
                 zp = stored_m.pose.position.z
-                if abs(x - xp) <0.01 and abs(y - yp)<0.01 and abs(z-zp)<0.01:
-                    duplicate=True
+                if abs(x - xp) < 0.01 and abs(y - yp) < 0.01 and abs(z - zp) < 0.01:
+                    duplicate = True
             if not duplicate:
                 self._markers.append(given_m)
 
@@ -315,10 +329,9 @@ class ControlNode(Node):
         # scan pins
         self.get_logger().info("requesting camera scan...")
         await self._vision_client.call_async(Empty.Request())
-     
+
         # return
         self.get_logger().info("camera scan complete")
-        
 
         count = 2
         while response.more_scans:
@@ -330,7 +343,7 @@ class ControlNode(Node):
             count += 1
             # scan pins
             self.get_logger().info("requesting camera scan...")
-            await self._vision_client.call_async(Empty.Request()) 
+            await self._vision_client.call_async(Empty.Request())
             self.get_logger().info("camera scan complete")
         return
 
