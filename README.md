@@ -1,7 +1,7 @@
 # ME495 Embedded Systems Final Project
 Authors: Joel Goh, Maximiliano Palay, Rahul Roy, Sophia Schiffer, Jialu Yu
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/HQIWntieInI?si=cuSlLRgHHYhV46Vc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+[![Watch the video](https://user-images.githubusercontent.com/61445107/224827476-1bfbf500-9377-4d22-b7be-7fbb7dac0ef8.png)](https://www.youtube.com/embed/HQIWntieInI?si=cuSlLRgHHYhV46Vc)
 
 In this project, the Franka arm searches for known randomly placed pins and shoots them down. It is fitted with an onboard camera to see its environment and a Nerf blaster to be able to shoot the targets. The user can specify the color of the pins that the arm is going to shoot first and then once all of those colored pins are shot, the arm will wait for a second input to continue shooting different colored targets. 
 
