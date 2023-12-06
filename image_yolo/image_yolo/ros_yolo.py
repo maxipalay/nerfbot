@@ -76,7 +76,6 @@ class Camera_subscriber(Node):
     def __init__(self):
         super().__init__('camera_subscriber')
         self.bridge = CvBridge()
-        # self.sub = self.create_subscription(msg_Image, '/camera/color/image_raw', self.camera_callback, 1)
         self._depth_image_topic = 'camera/aligned_depth_to_color/image_raw'#'/camera/depth/image_rect_raw'
         self._depth_info_topic = '/camera/depth/camera_info'
         self.sub_depth = self.create_subscription(msg_Image, self._depth_image_topic, self.imageDepthCallback, 1)
@@ -107,7 +106,6 @@ class Camera_subscriber(Node):
         self.blue_count=0
         self.green_count=0
         self.yellow_count=0
-        # self.not_count=0
         self.t=None
 
         self.scaling = 0.615
@@ -138,7 +136,6 @@ class Camera_subscriber(Node):
         # not_pins=[]
         cent=[]
         self.inference_ts=copy.deepcopy(self._latest_color_img_ts)
-        #print(self.inference_ts)
             
         results = self.model(self._latest_color_img)
           # Use the YOLO model to get detection results
@@ -177,9 +174,9 @@ class Camera_subscriber(Node):
                         for i in red_pins:
                             self.point_r.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_r.header.frame_id = f"red_pins_{self.red_count}"
-                            self.point_r.point.x = i[2]#i[0]  # Set x, y, z coordinates
+                            self.point_r.point.x = i[2] # Set x, y, z coordinates
                             self.point_r.point.y = -i[0]*self.scaling #i[1]
-                            self.point_r.point.z = -i[1]#i[2]  
+                            self.point_r.point.z = -i[1] 
                             self.create_marker(self.point_r.point.x,self.point_r.point.y,self.point_r.point.z,self.red_count,'red')
                             self.red_count += 1
 
@@ -189,9 +186,9 @@ class Camera_subscriber(Node):
                         for j in yellow_pins:
                             self.point_y.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_y.header.frame_id = f"yellow_pins_{self.yellow_count}" 
-                            self.point_y.point.x = j[2] #j[0]  # Set x, y, z coordinates
+                            self.point_y.point.x = j[2] # Set x, y, z coordinates
                             self.point_y.point.y = -j[0]*self.scaling #j[1]
-                            self.point_y.point.z = -j[1]#j[2]
+                            self.point_y.point.z = -j[1]
                             self.create_marker(self.point_y.point.x,self.point_y.point.y,self.point_y.point.z,self.yellow_count,'yellow')
                             self.yellow_count += 1
 
@@ -201,9 +198,9 @@ class Camera_subscriber(Node):
                         for k in green_pins:
                             self.point_g.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_g.header.frame_id = f"green_pins_{self.green_count}"
-                            self.point_g.point.x =  k[2]#k[0]  # Set x, y, z coordinates
+                            self.point_g.point.x =  k[2]# Set x, y, z coordinates
                             self.point_g.point.y = -k[0]*self.scaling #k[1]
-                            self.point_g.point.z = -k[1]#k[2] 
+                            self.point_g.point.z = -k[1]
                             self.create_marker(self.point_g.point.x,self.point_g.point.y,self.point_g.point.z,self.green_count,'green')
                             self.green_count += 1
 
@@ -214,9 +211,9 @@ class Camera_subscriber(Node):
                         for l in blue_pins:
                             self.point_b.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
                             self.point_b.header.frame_id = f"blue_pins_{self.blue_count}" 
-                            self.point_b.point.x =  l[2]#l[0]  # Set x, y, z coordinates
-                            self.point_b.point.y = -l[0]*self.scaling #l[1]
-                            self.point_b.point.z = -l[1]#l[2] 
+                            self.point_b.point.x =  l[2] # Set x, y, z coordinates
+                            self.point_b.point.y = -l[0]*self.scaling 
+                            self.point_b.point.z = -l[1]
                             self.get_logger().info("BLUE PIN DETECTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                             self.get_logger().info(f"blue pin x: {self.point_b.point.x}")
                             self.get_logger().info(f"blue pin y: {self.point_b.point.y}")
@@ -279,9 +276,9 @@ class Camera_subscriber(Node):
         marker.header.stamp = self.inference_ts
 
         k=PointStamped()
-        k.point.x= z/1000#+0.065
-        k.point.y = -y/1000#+0.02
-        k.point.z= x/1000#+0.05
+        k.point.x= z/1000
+        k.point.y = -y/1000
+        k.point.z= x/1000
 
         tp=tf2_geometry_msgs.do_transform_point(k,self.t)
         marker.id = count

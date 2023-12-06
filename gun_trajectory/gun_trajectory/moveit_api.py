@@ -181,10 +181,6 @@ class MoveItAPI():
             ik_req.robot_state.joint_state = planning_scene.scene.robot_state.joint_state
         else:
             ik_req.robot_state.joint_state = hint_robot_state.joint_state
-            # ik_req.robot_state.joint_state.name.append('panda_finger_joint1')
-            # ik_req.robot_state.joint_state.name.append('panda_finger_joint2')
-            # ik_req.robot_state.joint_state.position.append(0.02)
-            # ik_req.robot_state.joint_state.position.append(0.02)
 
         ik_req.avoid_collisions = True
 
@@ -437,8 +433,6 @@ class MoveItAPI():
 
         """
         success, plan, executed = await planner(target, start_state=start_state,hint_state = hint_state, execute=True, constraints=constraints)
-        # if success:
-        #     executed, response = await self.request_execute(plan)
 
         return success, plan, executed
 
@@ -530,15 +524,10 @@ class MoveItAPI():
 
         request.max_acceleration_scaling_factor = 0.1
 
-        # self._node.get_logger().info(str(dir(request)))
 
         request.cartesian_speed_limited_link = 'panda_hand_tcp'
 
-
-        # self._node.get_logger().info(str(request))
-
         response = await self._node.cartesian_cli.call_async(request)
-        # self._node.get_logger().info(str(response))
 
         await self.request_execute(response.solution)
 

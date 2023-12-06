@@ -62,9 +62,7 @@ class ControlNode(Node):
         self._cam_hand_tf.transform.rotation = Quaternion(
         x=0.707, y=0.0, z=0.707, w=0.0
         )
-        # self._cam_hand_tf.transform.rotation = Quaternion(
-        # x=0.0, y=0.0, z=0.707, w=0.707
-        # )
+
         self.camera_broadcaster.sendTransform(self._cam_hand_tf)  # publish transform
 
         # Callback group
@@ -183,7 +181,7 @@ class ControlNode(Node):
         self.get_logger().error(f'{colour_target}')
         # RUN ONCE!
         # # scan targets
-        await self._calibration_client.call_async(Empty.Request()) #########################################
+        await self._calibration_client.call_async(Empty.Request()) 
     
         if not self._run:
             await self.scan_targets()
@@ -237,8 +235,7 @@ class ControlNode(Node):
                     req.gun_id = 0
                 else:
                     req.gun_id = 1
-                # remove sleep when arduino is added
-                # time.sleep(5)
+
                 await self._shoot_client.call_async(req)
                 self.marker_count += 1 
                 self.get_logger().info(f"{self.marker_count}")
@@ -257,7 +254,6 @@ class ControlNode(Node):
         # TF listener
         try:
             # get the latest transform between left and right
-            # (rclpy.time.Time() means get the latest information)
             tag_1 = self.buffer.lookup_transform(
                 "panda_link0", "tag36h11:42", rclpy.time.Time()
             )
@@ -318,7 +314,7 @@ class ControlNode(Node):
 
         # scan pins
         self.get_logger().info("requesting camera scan...")
-        await self._vision_client.call_async(Empty.Request())#######################################################
+        await self._vision_client.call_async(Empty.Request())
      
         # return
         self.get_logger().info("camera scan complete")
@@ -334,7 +330,7 @@ class ControlNode(Node):
             count += 1
             # scan pins
             self.get_logger().info("requesting camera scan...")
-            await self._vision_client.call_async(Empty.Request()) #######################################################
+            await self._vision_client.call_async(Empty.Request()) 
             self.get_logger().info("camera scan complete")
         return
 
