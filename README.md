@@ -1,7 +1,9 @@
 # ME495 Embedded Systems Final Project
 Authors: Joel Goh, Maximiliano Palay, Rahul Roy, Sophia Schiffer, Jialu Yu
 
-Brief project overview
+<iframe width="560" height="315" src="https://www.youtube.com/embed/HQIWntieInI?si=cuSlLRgHHYhV46Vc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+In this project, the Franka arm searches for known randomly placed pins and shoots them down. It is fitted with an onboard camera to see its environment and a Nerf blaster to be able to shoot the targets. The user can specify the color of the pins that the arm is going to shoot first and then once all of those colored pins are shot, the arm will wait for a second input to continue shooting different colored targets. 
 
 ## Quickstart
 0. Connect the arduino and realsense camera to the computer
@@ -15,24 +17,29 @@ Brief project overview
     - An error message will show with the msg, "Waiting for input", where the audio input can be given starting the demo
 
 ## Overall System 
+The image below shows the different nodes in the system and how they communicate with each other.
+![image](https://github.com/ME495-EmbeddedSystems/final-project-group2/assets/61445107/208b8e67-7a8c-4eb3-9676-8359ce41ecad)
 
 ## Nodes
-Created by the authors
+Created by the authors:
 - Control
-    - Node that calls services from other nodes to run the demo
+    - Main node which is used to call services to other nodes to carry out the demo.
 - Shoot
-    - Node that controls the goal poses of the arm and the gripper
+    - Node that carries out all moveit-interface services such as cartesian planning, IK planning, and gripper requests. 
 - Yolo
-    - Node that runs YOLO and the target's real world coordinates
+    - Node that runs YOLO to find the pin with respect to the base of the Franka arm. 
 - User_Input
-    - Node that listens to user's audio input
+    - Node that listens to the user's audio input to set the color of the targeted pins. 
 - Trigger
-    - Node that controls the arduino for the gun's trigger
+    - Node that controls the Arduino for the gun's trigger.
 
-Not created by the authors
+Not created by the authors:
 - Apriltag_node
-    - Node that scans and gives the coordinates for the apriltags
+    - Node that scans and gives the coordinates for the April tags.
 
 ## Launch Files
-
+- Shoot_pins.launch.xml in control package
+    - This launch file launches the franka_moveit_config rviz launch file and the control, shoot, yolo, user_input, trigger, and apriltag nodes.
+ 
 ## Future Work
+- 

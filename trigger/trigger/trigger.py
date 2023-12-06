@@ -16,6 +16,7 @@ import serial
 import serial.tools.list_ports as list_ports
 from trigger_interfaces.srv import Fire
 
+
 class Trigger(Node):
     def __init__(self):
         super().__init__("trigger")
@@ -24,7 +25,7 @@ class Trigger(Node):
         ARDUINO_SERIAL = "85439313130351612011"
 
         # ports discovery
-        ports = list(list_ports.comports(True)) # get list of ports
+        ports = list(list_ports.comports(True))  # get list of ports
         arduino_port = None
 
         # grab the port that's connected to the Arduino
@@ -41,9 +42,7 @@ class Trigger(Node):
         self.serial_connection = serial.Serial(arduino_port)
 
         # create services
-        self.service = self.create_service(
-            Fire, "fire", self.fire_callback)
-
+        self.service = self.create_service(Fire, "fire", self.fire_callback)
 
     def fire_callback(self, request, response):
         """
@@ -58,15 +57,16 @@ class Trigger(Node):
         """
         gun_id = request.gun_id
         self.get_logger().info(f"Received request to fire gun with id {gun_id}")
-        
+
         # send information to Arduino
-        self.serial_connection.write(f"{gun_id}\n".encode(encoding='us-ascii'))
-        
+        self.serial_connection.write(f"{gun_id}\n".encode(encoding="us-ascii"))
+
         # wait for Arduino response
         raw_line = self.serial_connection.readline()
         self.get_logger().info("Received confirmation from arduino")
-        
+
         return response
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -75,5 +75,5 @@ def main(args=None):
     rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -117,14 +117,6 @@ class MoveGun(Node):
         while not self.controller_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("controller service not available, waiting again...")
 
-        ### timer
-
-        ### clients
-
-        ### subscribers
-
-        ### publisher
-
         # pin scanning stuff
         self._scan_positions = [
             Pose(
@@ -203,10 +195,9 @@ class MoveGun(Node):
         set  payload function
 
         Args:
+        ----
             weight (float): weight of the payload
         """
-        # SET PAYLOAD
-
         # deactivate controller
         request = SwitchController.Request()
         request.deactivate_controllers = ["panda_arm_controller"]
@@ -244,9 +235,6 @@ class MoveGun(Node):
 
         target = Pose(position=target_p, orientation=target_o)
 
-        # await self.moveit_api.plan_and_execute(
-        #     self.moveit_api.plan_position_and_orientation, target
-        # )
         await self.moveit_api.move_cartesian(target)
             
         self.get_logger().info("Aimed at target")
@@ -448,21 +436,6 @@ class MoveGun(Node):
         self.get_logger().info("Initiated gun scan")
 
         orientation = Quaternion(x=1.0,y=0.0,z=0.0,w=0.0)
-
-        # self._scan_positions = [
-        #     Pose(
-        #         position=Point(x=self.scan_x, y=-self.scan_y, z=self.scan_z),
-        #         orientation=orientation,
-        #     ),
-        #     Pose(
-        #         position=Point(x=self.scan_forward, y=0.0, z=self.scan_up),
-        #         orientation=orientation,
-        #     ),
-        #     Pose(
-        #         position=Point(x=self.scan_x, y=self.scan_y, z=self.scan_z),
-        #         orientation=orientation,
-        #     ),
-        # ]
         
         self._scan_positions = [
             Pose(
@@ -473,31 +446,10 @@ class MoveGun(Node):
 
         self.get_logger().info("Starting gun scan")
 
-
-        # # move arm to starting location
-        # target = Pose()
-        # target.position.x = self.scan_x
-        # target.position.y = -self.scan_y
-        # target.position.z = self.scan_z
-
-        # target.orientation.x = 1.0
-        # target.orientation.y = 0.0
-        # target.orientation.z = 0.0
-        # target.orientation.w = 0.0
-
         await self.moveit_api.plan_and_execute(
             self.moveit_api.plan_position_and_orientation, self._scan_positions[0]
         )
-        # await self.moveit_api.move_cartesian(self._scan_positions[0])
 
-        # # move arm to ending location
-        # target.position.x = self.scan_x
-        # target.position.y = self.scan_y
-        # target.position.z = self.scan_z
-
-        # await self.moveit_api.plan_and_execute(
-        #     self.moveit_api.plan_position_and_orientation, target
-        # )
         self.get_logger().info("Scan complete")
         return response
 
@@ -514,7 +466,6 @@ class MoveGun(Node):
             Point: target position xyz
             Tuple[float, float, float, float]: an quaternion
         """
-        # y = y + np.sign(y) * 0.10
         self.get_logger().info(f"{x}, {y}")
         yaw = np.arctan2(y, x)
         pitch = np.arctan2(0.60 -z - 0.09, np.sqrt(x**2 + y**2) - 0.6)
