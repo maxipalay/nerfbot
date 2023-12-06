@@ -1,45 +1,45 @@
 #!/usr/bin/env python3
-""" Offers a service to detect pins and publish them as markers
-    
-    PUBLISHERS:
-      visualization_marker_array (MarkerArray/visualization_msgs.msg) - publishes marker arrays
+"""
+Offers a service to detect pins and publish them as markers.
 
-    SERVICES:
-      coordinates (Empty/std_srvs.srv) - detect pins
+PUBLISHERS:
+    visualization_marker_array (MarkerArray/visualization_msgs.msg) - publishes marker arrays
+
+SERVICES:
+    coordinates (Empty/std_srvs.srv) - detect pins
 """
 from ultralytics import YOLO
+import cv2
+import copy
+import pyrealsense2 as rs2
+
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, QoSDurabilityPolicy
+
 from sensor_msgs.msg import Image as msg_Image
 from sensor_msgs.msg import CameraInfo
-import cv2
-from std_srvs.srv import Empty
-from cv_bridge import CvBridge, CvBridgeError
+from geometry_msgs.msg import PointStamped
 from visualization_msgs.msg import Marker, MarkerArray
-import sys
-from rclpy.qos import QoSProfile, QoSDurabilityPolicy
-import os
-import numpy as np
-from geometry_msgs.msg import PointStamped, Transform
 
-from tf2_ros import TransformException
+from std_srvs.srv import Empty
+
 import tf2_geometry_msgs
-
+from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
-import pyrealsense2 as rs2
-import copy
+from cv_bridge import CvBridge, CvBridgeError
 
 if not hasattr(rs2, "intrinsics"):
     import pyrealsense2.pyrealsense2 as rs2
-import os
 
 
 bridge = CvBridge()
 
 
 class Camera_subscriber(Node):
-    """Camera subscriber node that achieves cv recognition
+    """
+    Camera subscriber node that achieves cv recognition.
 
     Args:
     ----
@@ -77,7 +77,7 @@ class Camera_subscriber(Node):
         super().__init__("camera_subscriber")
         self.bridge = CvBridge()
         self._depth_image_topic = (
-            "camera/aligned_depth_to_color/image_raw"  #'/camera/depth/image_rect_raw'
+            "camera/aligned_depth_to_color/image_raw"
         )
         self._depth_info_topic = "/camera/depth/camera_info"
         self.sub_depth = self.create_subscription(
@@ -93,7 +93,7 @@ class Camera_subscriber(Node):
         self.intrinsics = None
         self.pix = None
         self.pix_grade = None
-        path = os.path.dirname(__file__)
+        # path = os.path.dirname(__file__)
         self.model = YOLO(
             "/home/rahulroy/final_project/src/final/image_yolo/image_yolo/best.pt"
         )
@@ -129,7 +129,8 @@ class Camera_subscriber(Node):
         )
 
     def detect_pins(self, request, response):
-        """Detect pins in the camera feed using a YOLO model.
+        """
+        Detect pins in the camera feed using a YOLO model.
 
         Args:
         ----
@@ -139,6 +140,7 @@ class Camera_subscriber(Node):
         Returns
         -------
             Service response.
+
         """
         red_pins = []  # List to store centroids of red pins
         yellow_pins = []
@@ -164,6 +166,7 @@ class Camera_subscriber(Node):
             t = self.tf_buffer.lookup_transform(
                 "panda_hand", "camera_link", rclpy.time.Time()
             )
+            self.get_logger().info(f"Transform is found: {t}")
         except TransformException as ex:
             self.get_logger().info(
                 f"Could not transform camera_link to panda_link0: {ex}"
@@ -260,16 +263,16 @@ class Camera_subscriber(Node):
                         )  # Get x, y, z from depth_world function
                         blue_pins.append((x3, y3, z3))
 
-                        for l in blue_pins:
+                        for b in blue_pins:
                             self.point_b.header.stamp = (
                                 self.get_clock().now().to_msg()
                             )  # Set the timestamp
                             self.point_b.header.frame_id = (
                                 f"blue_pins_{self.blue_count}"
                             )
-                            self.point_b.point.x = l[2]  # Set x, y, z coordinates
-                            self.point_b.point.y = -l[0] * self.scaling
-                            self.point_b.point.z = -l[1]
+                            self.point_b.point.x = b[2]  # Set x, y, z coordinates
+                            self.point_b.point.y = -b[0] * self.scaling
+                            self.point_b.point.z = -b[1]
                             self.get_logger().info(
                                 "BLUE PIN DETECTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                             )
@@ -309,7 +312,8 @@ class Camera_subscriber(Node):
         return response
 
     def depth_world(self, x, y):
-        """Convert pixel coordinates to real-world coordinates using depth information.
+        """
+        Convert pixel coordinates to real-world coordinates using depth information.
 
         Args:
         ----
@@ -319,6 +323,7 @@ class Camera_subscriber(Node):
         Returns
         -------
             Tuple[float, float, float]: Real-world coordinates (x, y, z).
+
         """
         if (
             self.intrinsics
@@ -338,9 +343,11 @@ class Camera_subscriber(Node):
             return x_new, y_new, z_new
 
     def create_marker(self, x, y, z, count, ns):
-        """Create a visualization marker based on coordinates.
+        """
+        Create a visualization marker based on coordinates.
 
         Args:
+        ----
             x (float): X-coordinate in meters.
             y (float): Y-coordinate in meters.
             z (float): Z-coordinate in meters.
@@ -348,7 +355,9 @@ class Camera_subscriber(Node):
             ns (str): Marker namespace.
 
         Returns
+        -------
             None
+
         """
         marker = Marker()
         marker.header.frame_id = "panda_link0"
@@ -371,7 +380,10 @@ class Camera_subscriber(Node):
         marker.pose.position.y = (tp.point.y) + 0.05
         marker.pose.position.z = tp.point.z
         print(
-            f"namespace:{ns},x:{marker.pose.position.x}, y:{marker.pose.position.y},z:{marker.pose.position.z}"
+            f"namespace:{ns}, \
+            x:{marker.pose.position.x}, \
+            y:{marker.pose.position.y}, \
+            z:{marker.pose.position.z}"
         )
         marker.pose.orientation.x = 0.0
         marker.pose.orientation.y = 0.0
@@ -402,13 +414,16 @@ class Camera_subscriber(Node):
 
     def get_latest_frame(self, data):
         """
-        Callback for the latest color image.
+        Call for the latest color image.
 
         Args:
+        ----
             data (Image): Color image message.
 
         Returns
+        -------
             None
+
         """
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
@@ -418,17 +433,21 @@ class Camera_subscriber(Node):
             print(e)
             return
         except ValueError as e:
+            print(e)
             return
 
     def imageDepthInfoCallback(self, cameraInfo):
         """
-        Callback for the depth camera information.
+        Obtain depth camera information.
 
         Args:
+        ----
             cameraInfo (CameraInfo): Camera information message.
 
         Returns
+        -------
             None
+
         """
         try:
             if self.intrinsics:
@@ -451,7 +470,7 @@ class Camera_subscriber(Node):
 
     def imageDepthCallback(self, data):
         """
-        Callback for the latest depth image.
+        Obtain latest depth image.
 
         Args:
         ----
@@ -460,6 +479,7 @@ class Camera_subscriber(Node):
         Returns
         -------
             None
+
         """
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, data.encoding)
@@ -468,12 +488,13 @@ class Camera_subscriber(Node):
             print(e)
             return
         except ValueError as e:
+            print(e)
             return
 
 
 def main(args=None):
     """
-    Main function to run the Camera_subscriber node.
+    Run the Camera_subscriber node.
 
     Args:
     ----
@@ -482,6 +503,7 @@ def main(args=None):
     Returns
     -------
         None
+
     """
     rclpy.init(args=args)
     node = Camera_subscriber()

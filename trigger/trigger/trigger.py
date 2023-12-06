@@ -1,5 +1,6 @@
 """
 Node the interacts with an Arduino through serial communication.
+
 This node is specifically designed for th eNerf Gun project, and
 it is a bridge to ask the arduino to fire a Nerf gun.
 
@@ -9,6 +10,7 @@ Services (offered)
 
 
 """
+
 
 import rclpy
 from rclpy.node import Node
@@ -48,11 +50,10 @@ class Trigger(Node):
         """
         Fire Nerf gun.
 
-        Args
+        Args:
         ----
-            - self: instance of this class
-            - request: service request
-            - response: service response
+        request: service request with the gun id
+        response: returns an empty response when finished
 
         """
         gun_id = request.gun_id
@@ -63,7 +64,8 @@ class Trigger(Node):
 
         # wait for Arduino response
         raw_line = self.serial_connection.readline()
-        self.get_logger().info("Received confirmation from arduino")
+        if raw_line:
+            self.get_logger().info("Received confirmation from arduino")
 
         return response
 
