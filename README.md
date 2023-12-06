@@ -3,7 +3,11 @@ Authors: Joel Goh, Maximiliano Palay, Rahul Roy, Sophia Schiffer, Jialu Yu
 
 
 
-Uploading ME495 Nerf gun team demo-compressed.mp4…
+
+https://github.com/ME495-EmbeddedSystems/final-project-group2/assets/41023326/e53cf0b2-0609-47e5-a805-149bd48352c2
+
+
+
 
 
 
