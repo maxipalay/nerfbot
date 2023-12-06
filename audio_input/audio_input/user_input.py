@@ -99,7 +99,6 @@ class UsersInput(Node):
         instructions = (f"Choose the following target colour:\n {SHOWN_WORDS}\n")
 
         self.get_logger().info(f"{instructions}")
-        time.sleep(1)
         for j in range(PROMPT_LIMIT):
             self.get_logger().info(f"Speak!")
             guess = recognize_speech_from_mic(recognizer, microphone)
