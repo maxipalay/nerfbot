@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
+""" Offers a service to detect pins and publish them as markers
+    
+    PUBLISHERS:
+      visualization_marker_array (MarkerArray/visualization_msgs.msg) - publishes marker arrays
 
+    SERVICES:
+      coordinates (Empty/std_srvs.srv) - detect pins
+"""
 from ultralytics import YOLO
 import rclpy
 from rclpy.node import Node
@@ -33,6 +40,39 @@ import os
 bridge = CvBridge()
 
 class Camera_subscriber(Node):
+    """Camera subscriber node that achieves cv recognition
+
+    Args:
+    ----
+        Node (rclpy.node.Node): Super class of the writer node.
+
+    Attrbutes
+    ---------
+        bridge (CvBridge): OpenCV bridge for converting image messages.
+        _depth_image_topic (str): Topic for depth images.
+        _depth_info_topic (str): Topic for depth camera information.
+        sub_depth (Subscription): Subscription for depth images.
+        sub_info (Subscription): Subscription for depth camera information.
+        sub1 (Subscription): Subscription for color images.
+        intrinsics (None or CameraInfo): Camera intrinsic parameters.
+        pix (None or ndarray): Pixel coordinates of detected pins.
+        pix_grade (None or ndarray): Pixel coordinates of detected pins after grading.
+        model (YOLO): YOLO model for detecting pins.
+        centroid (Service): Service for obtaining detected pin coordinates.
+        _latest_depth_img (None or Image): Latest depth image.
+        _latest_color_img (None or Image): Latest color image.
+        point_r (PointStamped): Detected red pin coordinates.
+        point_y (PointStamped): Detected yellow pin coordinates.
+        point_g (PointStamped): Detected green pin coordinates.
+        point_b (PointStamped): Detected blue pin coordinates.
+        marker_array (MarkerArray): Marker array for rviz visualization.
+        red_count (int): Count of detected red pins.
+        blue_count (int): Count of detected blue pins.
+        green_count (int): Count of detected green pins.
+        yellow_count (int): Count of detected yellow pins.
+        pub2 (Publisher): Publisher for visualization marker array.
+
+    """
     def __init__(self):
         super().__init__('camera_subscriber')
         self.bridge = CvBridge()
@@ -80,6 +120,17 @@ class Camera_subscriber(Node):
 
 
     def detect_pins(self, request, response):
+        """Detect pins in the camera feed using a YOLO model.
+
+        Args:
+        ----
+            request: Service request.
+            response: Service response.
+
+        Returns
+        -------
+            Service response. 
+        """
         red_pins = []  # List to store centroids of red pins
         yellow_pins = [] 
         green_pins =[]
@@ -173,17 +224,7 @@ class Camera_subscriber(Node):
 
                             self.create_marker(self.point_b.point.x,self.point_b.point.y,self.point_b.point.z,self.blue_count,'blue')
                             self.blue_count += 1
-                # elif class_name == "not_pins":
-                #     x4, y4, z4 = self.depth_world(centroid[1], centroid[0])  # Get x, y, z from depth_world function
-                #     not_pins.append((x4, y4, z4))
-                #     for m in not_pins:
-                #         self.point_b.header.stamp = self.get_clock().now().to_msg()  # Set the timestamp
-                #         self.point_b.header.frame_id = f"blue_pins_{self.blue_count}" 
-                #         self.point_b.point.x =  m[2]#l[0]  # Set x, y, z coordinates
-                #         self.point_b.point.y = -m[0]#l[1]
-                #         self.point_b.point.z = -m[1]#l[2] 
-                #         self.create_marker(self.point_b.point.x,self.point_b.point.y,self.point_b.point.z,self.not_count,'not_pins')
-                #         self.not_count += 1
+
             for x in cent:
                 img = cv2.circle(self._latest_color_img,(int(x[0]),int(x[1])), radius=5, color=(0,0,255), thickness=-1)
             if len(cent)>0:
@@ -195,6 +236,17 @@ class Camera_subscriber(Node):
         return response
     
     def depth_world(self, x, y):
+        """Convert pixel coordinates to real-world coordinates using depth information.
+
+        Args:
+        ----
+            x (int): X-coordinate.
+            y (int): Y-coordinate.
+
+        Returns
+        -------
+            Tuple[float, float, float]: Real-world coordinates (x, y, z).
+        """
         if self.intrinsics and self._latest_depth_img is not None and self._latest_color_img is not None:
             self.get_logger().info("processing request")
             
@@ -210,11 +262,22 @@ class Camera_subscriber(Node):
 
 
     def create_marker(self, x, y, z, count,ns):
+        """Create a visualization marker based on coordinates.
+
+        Args:
+            x (float): X-coordinate in meters.
+            y (float): Y-coordinate in meters.
+            z (float): Z-coordinate in meters.
+            count (int): Marker ID.
+            ns (str): Marker namespace.
+
+        Returns
+            None
+        """
         marker = Marker()
         marker.header.frame_id = "panda_link0"
         marker.header.stamp = self.inference_ts
-        #print(f"marker{self.inference_ts}")
-        # marker.header.stamp = self.get_clock().now().to_msg()
+
         k=PointStamped()
         k.point.x= z/1000#+0.065
         k.point.y = -y/1000#+0.02
@@ -256,17 +319,20 @@ class Camera_subscriber(Node):
             marker.color.g = 1.0
             marker.color.b = 0.0
             marker.color.a = 1.0
-        # elif ns=='not_pins':
-        #     marker.color.r = 1.0
-        #     marker.color.g = 1.0
-        #     marker.color.b = 0.0
-        #     marker.color.a = 1.0
-        # print(f"namespace:{ns}, x:{x},y:{y}, z:{z}")
+        # Append the marker to the MarkerArray 
         self.marker_array.markers.append(marker)
-          # Append the marker to the MarkerArray 
+          
 
     def get_latest_frame(self,data):
-        # Wait for a new frame from the RealSense camera
+        """
+        Callback for the latest color image.
+
+        Args:
+            data (Image): Color image message.
+
+        Returns
+            None
+        """
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, 'bgr8')
             self._latest_color_img = cv_image
@@ -279,6 +345,15 @@ class Camera_subscriber(Node):
              
      
     def imageDepthInfoCallback(self, cameraInfo):
+        """
+        Callback for the depth camera information.
+
+        Args:
+            cameraInfo (CameraInfo): Camera information message.
+
+        Returns
+            None
+        """
         try:
             if self.intrinsics:
                 return
@@ -298,6 +373,17 @@ class Camera_subscriber(Node):
             print(e)
             return
     def imageDepthCallback(self, data):
+        """
+        Callback for the latest depth image.
+
+        Args:
+        ----
+            data (Image): Depth image message.
+
+        Returns
+        -------
+            None
+        """
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, data.encoding)
             self._latest_depth_img = cv_image
@@ -309,6 +395,17 @@ class Camera_subscriber(Node):
 
 
 def main(args=None):
+    """
+    Main function to run the Camera_subscriber node.
+
+    Args:
+    ----
+        args: Command-line arguments.
+
+    Returns
+    -------
+        None
+    """
     rclpy.init(args=args)
     node = Camera_subscriber()
     rclpy.spin(node)
