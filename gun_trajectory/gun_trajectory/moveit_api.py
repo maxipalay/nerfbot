@@ -137,7 +137,7 @@ class MoveItAPI:
             force (float, optional): The force applied by the gripper (default is 10.0).
 
         Returns
-            Tuple[bool, Grasp.Result]: A tuple containing a boolean indicating the success of the operation
+            Tuple[bool, Grasp.Result]: A tuple containing a bool indicating the operation's success
             and the result of the gripper movement.
 
         """
@@ -160,8 +160,8 @@ class MoveItAPI:
         Fully open the gripper.
 
         Returns
-            Tuple[bool, Homing.Result]: A tuple containing a boolean indicating the success of the homing operation
-            and the result of the gripper homing.
+            Tuple[bool, Homing.Result]: A tuple with booleans indicating
+            the homing operation's success and the result of the gripper homing.
 
         """
         req = Homing.Goal()
@@ -191,12 +191,13 @@ class MoveItAPI:
 
         Args:
             target_pose (Pose): The target pose for IK computation.
-            hint_robot_state (RobotState, optional): A hint for the initial robot state (default is None).
-            constraints (Constraints, optional): Additional constraints for IK computation (default is None).
+            hint_robot_state (RobotState, optional): A hint for the initial robot state.
+            constraints (Constraints, optional): constraints for IK computation.
 
         Returns
-            Tuple[bool, Optional[RobotState]]: A tuple containing a boolean indicating the success of the IK computation
-            and the resulting robot state. If no IK solution is found, returns (False, None).
+            Tuple[bool, Optional[RobotState]]: tuple with booleans
+            indicating IK computation's success and the resulting robot state.
+            If no IK solution is found, returns (False, None).
 
         """
         # GETTING THE ROBOT STATE FROM THE SCENE
@@ -244,14 +245,15 @@ class MoveItAPI:
         Request a motion plan for robot movement.
 
         Args:
-            goal_state (Optional[RobotState]): The goal robot state for the motion plan (default is None).
-            goal_orientation (Optional[Quaternion]): The goal orientation for the motion plan (default is None).
-            start_state (Optional[RobotState]): The starting robot state for the motion plan (default is None).
+            goal_state (Optional[RobotState]): The goal robot state for the motion plan.
+            goal_orientation (Optional[Quaternion]): The goal orientation for the motion plan.
+            start_state (Optional[RobotState]): The starting robot state for the motion plan.
             execute (bool): Flag indicating whether to execute the motion plan.
 
         Returns
-            Tuple[bool, Optional[MotionPlanResponse]]: A tuple containing a boolean indicating the success of the motion plan
-            and the resulting motion plan response. If no motion plan is found, returns (False, None).
+            Tuple[bool, Optional[MotionPlanResponse]]: A tuple with a boolean
+            hints motion plan's success and the resulting motion plan response.
+            If no motion plan is found, returns (False, None).
 
         """
         planning_scene = await self.get_planning_scene()
@@ -529,10 +531,13 @@ class MoveItAPI:
         Request execution of a motion plan.
 
         Args:
+        ----
             trajectory: The trajectory to be executed.
 
         Returns
-            Tuple[bool, ExecuteTrajectory.Result]: A tuple containing a boolean indicating the success of the execution
+        -------
+            Tuple[bool, ExecuteTrajectory.Result]: A tuple containing a
+            boolean indicating the success of the execution
             and the result of the execution.
 
         """
@@ -556,9 +561,11 @@ class MoveItAPI:
         Move the robot along a Cartesian path to the specified pose.
 
         Args:
+        ----
             pose: The target pose for the Cartesian path.
 
-        Returns:
+        Returns
+        -------
             None
 
         """

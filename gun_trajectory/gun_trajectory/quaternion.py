@@ -1,7 +1,5 @@
 import numpy as np
-
 from geometry_msgs.msg import Quaternion
-import math
 
 
 def euler_to_quaternion(roll, pitch, yaw):

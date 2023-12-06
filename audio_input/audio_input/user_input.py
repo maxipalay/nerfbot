@@ -10,9 +10,6 @@ Returns
     None
 
 """
-import random
-import time
-
 import rclpy
 from rclpy.node import Node
 
@@ -30,20 +27,22 @@ def recognize_speech_from_mic(recognizer, microphone):
         microphone (Microphone): An instance of the speech recognition Microphone class.
 
     Raises:
-        TypeError: If `recognizer` is not an instance of Recognizer.
+        TypeError: If `recognizer` is not an instance of Recogniclearzer.
         TypeError: If `microphone` is not an instance of Microphone.
 
     Returns:
         dict: A dictionary containing recognition results.
             - 'success' (bool): True if recognition was successful, False otherwise.
             - 'error' (str): An error message if an error occurred during recognition.
-            - 'transcription' (str): The recognized speech transcription if successful, None otherwise.
+            - 'transcription' (str): The recognized speech transcription
     """
     if not isinstance(recognizer, sr.Recognizer):
-        raise TypeError("`recognizer` must be `Recognizer` instance")
+        error_msg_r = "`recognizer` must be `Recognizer` instance"
+        raise TypeError(error_msg_r)
 
     if not isinstance(microphone, sr.Microphone):
-        raise TypeError("`microphone` must be `Microphone` instance")
+        error_msg_m = "`microphone` must be `Microphone` instance"
+        raise TypeError(error_msg_m)
 
     with microphone as source:
         recognizer.adjust_for_ambient_noise(source)
@@ -83,13 +82,12 @@ class UsersInput(Node):
         """A callback function for processing user input.
 
         Args:
-            request (UserInput): An instance of the UserInput message representing the user's request.
+            request (UserInput): UserInput message representing the user's request.
             response (UserInput.Response): An instance of the UserInput response message.
 
         Returns:
             UserInput.Response: The processed user input stored in the response message.
         """
-        SHOWN_WORDS = ["red", "blue", "yellow", "green"]
         WORDS = ["red", "blue", "yellow", "green", "matt"]
         PROMPT_LIMIT = 5
 
@@ -97,11 +95,9 @@ class UsersInput(Node):
         microphone = sr.Microphone()
 
         final_guess = None
-        instructions = f"Choose the following target colour:\n {SHOWN_WORDS}\n"
 
-        self.get_logger().info(f"{instructions}")
         for j in range(PROMPT_LIMIT):
-            self.get_logger().info(f"Speak!")
+            self.get_logger().info("Speak!")
             guess = recognize_speech_from_mic(recognizer, microphone)
             if guess["transcription"]:
                 if guess["transcription"].lower() not in WORDS:

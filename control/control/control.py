@@ -31,12 +31,9 @@ import tf2_ros
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
-from geometry_msgs.msg import TransformStamped, Quaternion, Pose, Point
+from geometry_msgs.msg import TransformStamped, Quaternion, Pose
 from trajectory_interfaces.srv import Grab, Target, TargetScanRequest, UserInput
-from franka_msgs.srv import SetLoad
 from trigger_interfaces.srv import Fire
-
-from tf2_ros import TransformBroadcaster
 
 
 class ControlNode(Node):
@@ -210,7 +207,6 @@ class ControlNode(Node):
             self.last_t = copy.deepcopy(self.t2)
 
         self._run = True
-        
         if self.marker_count < 2:
             self.get_logger().info(f"{self.t1}")
             self._grab_future = await self._grab_client.call_async(

@@ -23,7 +23,6 @@ import numpy as np
 
 import rclpy
 from rclpy.node import Node
-from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import ReentrantCallbackGroup
 from geometry_msgs.msg import Point, Pose, Quaternion
 from std_srvs.srv import Empty
@@ -31,13 +30,14 @@ from std_srvs.srv import Empty
 from trajectory_interfaces.srv import Grab, Target, TargetScanRequest
 from controller_manager_msgs.srv import SwitchController
 from .moveit_api import MoveItAPI
-from .quaternion import *
+from .quaternion import euler_to_quaternion
 from franka_msgs.srv import SetLoad
 from moveit_msgs.msg import RobotState, JointConstraint, Constraints
 from sensor_msgs.msg import JointState
 
+
 class MoveGun(Node):
-"""
+    """
     MoveGun node that achieves different gun-interaction features
 
     Args:
@@ -60,7 +60,8 @@ class MoveGun(Node):
         executed (bool): Flag indicating whether a motion plan has been executed.
         _scan_positions (List[Pose]): List of Pose objects representing scanning positions.
         _scan_hints (List[RobotState]): List of RobotState objects representing hints for scanning.
-        _constraints (List[Constraints]): List of Constraints objects representing joint constraints for scanning.
+        _constraints (List[Constraints]): List of Constraints objects.
+        representing joint constraints for scanning.
         _scanning_targets (bool): Flag indicating whether the robot is currently scanning targets.
         _target_scan_index (int): Index indicating the current target scan in progress.
 
@@ -84,35 +85,43 @@ class MoveGun(Node):
             self.constraints_link,
         )
 
-        ### variables
+        # variables
         self.scan_x = 0.30689
         self.scan_y = 0.5
         self.scan_z = 0.48688
         self.scan_forward = 0.3
         self.scan_up = 0.6
 
-        self.tag_offset = np.array([0.05,0.0,-0.005])  # position of end
-                                                    # effector relative to tag
+        self.tag_offset = np.array([0.05, 0.0, -0.005])  # position of end
+        # effector relative to tag
         self.ready_offset = 0.0
 
-        ### callback_groups
-
-        ### parameters
-
-        ### services
-        self.shot = self.create_service(Target, "/aim", self.shoot_SrvCallback, callback_group=self._cbgrp)
-        self.gun_scan = self.create_service(Empty, "/gun_scan", self.gun_scan_callback, callback_group=self._cbgrp)
+        # services
+        self.shot = self.create_service(
+            Target, "/aim", self.shoot_SrvCallback, callback_group=self._cbgrp)
+        self.gun_scan = self.create_service(
+            Empty, "/gun_scan", self.gun_scan_callback, callback_group=self._cbgrp)
         self.target_scan = self.create_service(
-            TargetScanRequest, "/target_scan", self.target_scan_callback, callback_group=self._cbgrp
+            TargetScanRequest, "/target_scan",
+            self.target_scan_callback, callback_group=self._cbgrp
         )
-        self.grab_gun = self.create_service(Grab, "/grab", self.grab_gun_callback, callback_group=self._cbgrp)
-        self.place_gun = self.create_service(Grab, "/place", self.place_gun_callback)
-        self.calibrate_gun = self.create_service(Empty, "/cali", self.grip_callback,callback_group=self._cbgrp)
+        self.grab_gun = self.create_service(
+            Grab, "/grab", self.grab_gun_callback, callback_group=self._cbgrp)
+        self.place_gun = self.create_service(
+            Grab, "/place", self.place_gun_callback)
+        self.calibrate_gun = self.create_service(
+            Empty, "/cali", self.grip_callback, callback_group=self._cbgrp)
 
-        self.controller_client = self.create_client(SwitchController, "/controller_manager/switch_controller", callback_group=self._cbgrp)
-        self.payload_client = self.create_client(SetLoad, "/service_server/set_load", callback_group=self._cbgrp)
+        self.controller_client = self.create_client(
+            SwitchController, "/controller_manager/switch_controller",
+            callback_group=self._cbgrp)
+        self.payload_client = self.create_client(SetLoad,
+                                                 "/service_server/set_load",
+                                                 callback_group=self._cbgrp)
 
-        self.move_cartesian_srv = self.create_service(Grab, "/move_cart", self.move_cart_callback, callback_group=self._cbgrp) # shoudl be removed, used for testing
+        self.move_cartesian_srv = self.create_service(Grab, "/move_cart",
+                                                      self.move_cart_callback,
+                                                      callback_group=self._cbgrp)
 
         while not self.controller_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("controller service not available, waiting again...")
@@ -131,27 +140,38 @@ class MoveGun(Node):
 
         rs_1 = RobotState()
         js_1 = JointState()
-        js_1.name = ['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7']
-        js_1.position = [-30*np.pi/180.0, -68*np.pi/180.0, 1*np.pi/180.0, -159*np.pi/180.0, 12*np.pi/180.0, 162*np.pi/180.0, 34*np.pi/180.0]
+        js_1.name = ['panda_joint1', 'panda_joint2', 'panda_joint3',
+                     'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7']
+        js_1.position = [-30*np.pi/180.0, -68*np.pi/180.0, 1*np.pi/180.0,
+                         -159*np.pi/180.0, 12*np.pi/180.0, 162*np.pi/180.0, 34*np.pi/180.0]
         rs_1.joint_state = js_1
 
         joint_constraints_1 = []
-        for name,value in zip(js_1.name,js_1.position):
-            joint_constraints_1.append(JointConstraint(joint_name=name, position=value, tolerance_below=0.1, tolerance_above=0.1, weight=1.0))
-        
-        constraint_1 = Constraints(joint_constraints = joint_constraints_1)
+        for name, value in zip(js_1.name, js_1.position):
+            joint_constraints_1.append(JointConstraint(joint_name=name,
+                                                       position=value,
+                                                       tolerance_below=0.1,
+                                                       tolerance_above=0.1,
+                                                       weight=1.0))
+
+        constraint_1 = Constraints(joint_constraints=joint_constraints_1)
 
         rs_2 = RobotState()
         js_2 = JointState()
-        js_2.name = ['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7']
-        js_2.position = [44*np.pi/180.0, -70*np.pi/180.0, -15*np.pi/180.0, -159*np.pi/180.0, -39*np.pi/180.0, 162*np.pi/180.0, 72*np.pi/180.0]
+        js_2.name = ['panda_joint1', 'panda_joint2', 'panda_joint3',
+                     'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7']
+        js_2.position = [44*np.pi/180.0, -70*np.pi/180.0,
+                         -15*np.pi/180.0, -159*np.pi/180.0, -39*np.pi/180.0,
+                         162*np.pi/180.0, 72*np.pi/180.0]
         rs_2.joint_state = js_2
 
         joint_constraints_2 = []
-        for name,value in zip(js_2.name,js_2.position):
-            joint_constraints_2.append(JointConstraint(joint_name=name, position=value, tolerance_below=0.1, tolerance_above=0.1, weight=1.0))
-        
-        constraint_2 = Constraints(joint_constraints = joint_constraints_2)
+        for name, value in zip(js_2.name, js_2.position):
+            joint_constraints_2.append(JointConstraint(joint_name=name,
+                                                       position=value, tolerance_below=0.1,
+                                                       tolerance_above=0.1, weight=1.0))
+
+        constraint_2 = Constraints(joint_constraints=joint_constraints_2)
 
         self._scan_hints = [rs_1, rs_2]
         self._constraints = [constraint_1, constraint_2]
@@ -161,14 +181,17 @@ class MoveGun(Node):
 
     async def move_cart_callback(self, request, response):
         """
-        move cartesian callback function
+        move cartesian callback function.
 
         Args:
-            request (Grab_request): the Grab msg
-            response (Grab_response): Empty msg
+        ----
+            request (Grab_request): the Grab msg.
+            response (Grab_response): Empty msg.
 
-        Returns:
-            Grab_response: Empty msg
+        Returns
+        -------
+            Grab_response: Empty msg.
+
         """
         await self.moveit_api.move_cartesian(request.pose)
         return response
@@ -179,24 +202,26 @@ class MoveGun(Node):
 
         Args:
         ----
-            request (Empty): Empty msg
-            response (Empty): Empty msg
+            request (Empty): Empty msg.
+            response (Empty): Empty msg.
 
         Returns
         -------
-            Empty: Empty msg
+            Empty: Empty msg.
+
         """
         await self.set_payload(0.0)
         await self.moveit_api.move_gripper(0.025, 0.05, 10.0)
         return response
-    
-    async def set_payload(self, weight:float):
+
+    async def set_payload(self, weight: float):
         """
-        set  payload function
+        Set payload function.
 
         Args:
         ----
-            weight (float): weight of the payload
+            weight (float): weight of the payload.
+
         """
         # deactivate controller
         request = SwitchController.Request()
@@ -216,7 +241,7 @@ class MoveGun(Node):
 
     async def shoot_SrvCallback(self, request, response):
         """
-        gun shooting callback function to 
+        gun shooting callback function to
 
         Args:
         ----
@@ -236,10 +261,10 @@ class MoveGun(Node):
         target = Pose(position=target_p, orientation=target_o)
 
         await self.moveit_api.move_cartesian(target)
-            
+   
         self.get_logger().info("Aimed at target")
         return response
-    
+
     async def grab_gun_callback(self, request, response):
         """
         grab gun callback function to grab the gun
@@ -253,9 +278,9 @@ class MoveGun(Node):
         -------
             Grab_Response: Empty msg
         """
-       
+
         self.get_logger().info("Initiated grab")
-        
+
         # move arm to starting location
         target = Pose()
         target.position.x = request.pose.position.x + self.tag_offset[0] + self.ready_offset
@@ -268,11 +293,11 @@ class MoveGun(Node):
         target.orientation.w = 0.0
 
         self.get_logger().info(f"Moving to standoff position.")
-        
+
         await self.moveit_api.plan_and_execute(
             self.moveit_api.plan_position_and_orientation, target
         )
-            
+
         self.get_logger().info("Finished motion to standoff.")
         
         self.get_logger().info("Opening")        
@@ -281,7 +306,7 @@ class MoveGun(Node):
         target.position.x = request.pose.position.x + self.tag_offset[0]
         target.position.y = request.pose.position.y + self.tag_offset[1]
         target.position.z = request.pose.position.z + self.tag_offset[2]
-        
+
         self.get_logger().info("Moving to pick position.")
         self.get_logger().info(f"Moving to z: {target.position.z}")    
 
@@ -294,7 +319,7 @@ class MoveGun(Node):
 
         # Move back to ready
         self.get_logger().info("Standoff")
-        
+
         # move arm to starting location
         target = Pose()
         target.position.x = request.pose.position.x + self.tag_offset[0] + self.ready_offset
@@ -311,7 +336,7 @@ class MoveGun(Node):
         await self.moveit_api.move_cartesian(target)
 
         return response
-    
+
     async def place_gun_callback(self,request,response):
         """
         Replaces gun on the mount after shooting
