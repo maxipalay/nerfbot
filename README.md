@@ -1,5 +1,5 @@
 # ME495 Embedded Systems Final Project
-Author: Joel Goh, Maximiliano Palay, Rahul Roy, Sophia Schiffer, Jialu Yu
+Authors: Joel Goh, Maximiliano Palay, Rahul Roy, Sophia Schiffer, Jialu Yu
 
 Brief project overview
 
@@ -17,6 +17,21 @@ Brief project overview
 ## Overall System 
 
 ## Nodes
+Created by the authors
+- Control
+    - Node that calls services from other nodes to run the demo
+- Shoot
+    - Node that controls the goal poses of the arm and the gripper
+- Yolo
+    - Node that runs YOLO and the target's real world coordinates
+- User_Input
+    - Node that listens to user's audio input
+- Trigger
+    - Node that controls the arduino for the gun's trigger
+
+Not created by the authors
+- Apriltag_node
+    - Node that scans and gives the coordinates for the apriltags
 
 ## Launch Files
 

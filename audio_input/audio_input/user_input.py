@@ -1,9 +1,9 @@
 """
-UserInput node that could help with audio user input.
+UsersInput node that could help with audio user input.
 
 Services
 --------
-    input [UserInput]: user input.
+    input [UsersInput]: user input.
 
 Returns
 -------
@@ -65,7 +65,7 @@ def recognize_speech_from_mic(recognizer, microphone):
     return response
 # End Citation [1]
 
-class UserInput(Node):
+class UsersInput(Node):
     """
     A UserInput node that could help with audio user input
 
@@ -121,6 +121,6 @@ class UserInput(Node):
 
 def entry_point(args=None):
     rclpy.init(args=args)
-    user_input = UserInput()
+    user_input = UsersInput()
     rclpy.spin(user_input)
 
