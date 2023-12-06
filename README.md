@@ -26,7 +26,7 @@ In this project, the Franka arm searches for known randomly placed pins and shoo
 
 ## Overall System 
 The image below shows the different nodes in the system and how they communicate with each other.
-![image](https://github.com/ME495-EmbeddedSystems/final-project-group2/assets/61445107/208b8e67-7a8c-4eb3-9676-8359ce41ecad)
+![image0](https://github.com/ME495-EmbeddedSystems/final-project-group2/assets/61445107/13586291-4e3b-4553-9f9e-4bd79ed97753)
 
 ## Nodes
 Created by the authors:
@@ -50,4 +50,6 @@ Not created by the authors:
     - This launch file launches the franka_moveit_config rviz launch file and the control, shoot, yolo, user_input, trigger, and apriltag nodes.
  
 ## Future Work
-- 
+- One of the biggest issues is the success rate of hitting targets because even if the gun is correctly pointed at the target, the error from the gun can cause the gun to miss. This would be something that would ideally be fixed by either increasing the accuracy of the gun so that as long as the gun is properly aimed that it would hit the target or increasing the bullets to increase the chances of hitting. Another option would be to include motion while the gun is shooting to try to correct the error from the gun.
+- 360-degree scanning and shooting. Currently, the arm is only able to scan and shoot targets in front of itself so the next step would be adding the ability to target in any direction. Additionally, further testing on the limits of the height of the targets would also be necessary to determine how high and how low a target can be and have the arm still successfully shoot it.
+- Dynamic aiming. The assumption is made that the targets are stationary and unable to move, so being able to add a camera to allow for the arm to constantly scan for targets would allow for two different things. The first is a dynamic environment where targets are moved before the gun is shot and remain stationary and can be hit, and the second is moving targets where the gun can track its motion and shoot. 
