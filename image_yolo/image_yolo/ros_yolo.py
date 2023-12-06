@@ -9,6 +9,7 @@ SERVICES:
     coordinates (Empty/std_srvs.srv) - detect pins
 """
 from ultralytics import YOLO
+import os
 import cv2
 import copy
 import pyrealsense2 as rs2
@@ -93,10 +94,8 @@ class Camera_subscriber(Node):
         self.intrinsics = None
         self.pix = None
         self.pix_grade = None
-        # path = os.path.dirname(__file__)
-        self.model = YOLO(
-            "/home/rahulroy/final_project/src/final/image_yolo/image_yolo/best.pt"
-        )
+        path = os.path.dirname(__file__)
+        self.model = YOLO(path + '/best.pt')
         self.centroid = self.create_service(Empty, "coordinates", self.detect_pins)
 
         self.tf_buffer = Buffer()
