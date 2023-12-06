@@ -26,7 +26,7 @@ In this project, the Franka arm searches for known randomly placed pins and shoo
 
 ## Overall System 
 The image below shows the different nodes in the system and how they communicate with each other.
-![image](https://github.com/ME495-EmbeddedSystems/final-project-group2/assets/61445107/208b8e67-7a8c-4eb3-9676-8359ce41ecad)
+![image0](https://github.com/ME495-EmbeddedSystems/final-project-group2/assets/61445107/13586291-4e3b-4553-9f9e-4bd79ed97753)
 
 ## Nodes
 Created by the authors:
