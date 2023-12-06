@@ -20,21 +20,25 @@ from trajectory_interfaces.srv import UserInput
 
 # Start Citation [1]
 def recognize_speech_from_mic(recognizer, microphone):
-    """Recognize speech from a microphone.
+    """
+    Recognize speech from a microphone.
 
     Args:
         recognizer (SpeechRecognizer): An instance of the speech recognition Recognizer class.
         microphone (Microphone): An instance of the speech recognition Microphone class.
 
-    Raises:
+    Raises
+    -------
         TypeError: If `recognizer` is not an instance of Recogniclearzer.
         TypeError: If `microphone` is not an instance of Microphone.
 
-    Returns:
+    Returns
+    -------
         dict: A dictionary containing recognition results.
             - 'success' (bool): True if recognition was successful, False otherwise.
             - 'error' (str): An error message if an error occurred during recognition.
             - 'transcription' (str): The recognized speech transcription
+
     """
     if not isinstance(recognizer, sr.Recognizer):
         error_msg_r = "`recognizer` must be `Recognizer` instance"
@@ -66,7 +70,7 @@ def recognize_speech_from_mic(recognizer, microphone):
 
 class UsersInput(Node):
     """
-    A UserInput node that could help with audio user input
+    A UserInput node that could help with audio user input.
 
     Args:
     ----
@@ -79,13 +83,15 @@ class UsersInput(Node):
         self.srv = self.create_service(UserInput, "input", self.user_input_callback)
 
     def user_input_callback(self, request, response):
-        """A callback function for processing user input.
+        """
+        Process user input.
 
         Args:
             request (UserInput): UserInput message representing the user's request.
             response (UserInput.Response): An instance of the UserInput response message.
 
-        Returns:
+        Returns
+        -------
             UserInput.Response: The processed user input stored in the response message.
         """
         WORDS = ["red", "blue", "yellow", "green", "matt"]

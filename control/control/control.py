@@ -1,5 +1,5 @@
 """
-A Control node that could control the robot with various clients
+A Control node that could control the robot with various clients.
 
 Clients
 -------
@@ -38,7 +38,7 @@ from trigger_interfaces.srv import Fire
 
 class ControlNode(Node):
     """
-    A Control node that could control the robot to achieve different gun shooting
+    A Control node that could control the robot to achieve different gun shooting.
 
     Args:
     ----
@@ -168,8 +168,7 @@ class ControlNode(Node):
         self._run = False
 
     async def loop_cb(self):
-        """Main loop."""
-
+        """Control main loop."""
         # calibrate gripper
 
         self.get_logger().error("Waiting for Input.")
@@ -261,7 +260,7 @@ class ControlNode(Node):
         return
 
     def tf_cb(self):
-        """Listens to tf data to track April Tags."""
+        """Listen to tf data to track April Tags."""
         # TF listener
         try:
             # get the latest transform between left and right
@@ -297,10 +296,13 @@ class ControlNode(Node):
             self.get_logger().debug(f"Extrapolation exception: {e}")
 
     def marker_cb(self, msg):
-        """store the pin positions in markerArrays
+        """
+        Store the pin positions in markerArrays.
 
         Args:
+        ----
             msg (MarkerArray): Array storing Markers
+
         """
         for given_m in msg.markers:
             duplicate = False
@@ -317,7 +319,7 @@ class ControlNode(Node):
                 self._markers.append(given_m)
 
     async def scan_targets(self):
-        """Moves the robot to scanning positions and requests for detections."""
+        """Move the robot to scanning positions and requests for detections."""
         # move robot to scan position
         self.get_logger().info("position 1")
         response = await self._targets_client.call_async(TargetScanRequest.Request())

@@ -1,8 +1,8 @@
 """Test quaternion."""
-import rclpy
 import numpy as np
 from gun_trajectory.quaternion import euler_to_quaternion, quaternion_multiply
 from geometry_msgs.msg import Quaternion
+
 
 def test_quaternion():
     quat = euler_to_quaternion(np.pi, 0, 0)
