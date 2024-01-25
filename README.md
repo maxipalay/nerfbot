@@ -3,15 +3,15 @@ Authors: Joel Goh, Maximiliano Palay, Rahul Roy, Sophia Schiffer, Jialu Yu
 
 
 
-
-https://github.com/ME495-EmbeddedSystems/final-project-group2/assets/41023326/e53cf0b2-0609-47e5-a805-149bd48352c2
-
-
-
+https://github.com/maxipalay/nerfbot/assets/41023326/5abfc6e0-effe-4f80-8943-cf5e4226e875
 
 
 
 In this project, the Franka arm searches for known randomly placed pins and shoots them down. It is fitted with an onboard camera to see its environment and a Nerf blaster to be able to shoot the targets. The user can specify the color of the pins that the arm is going to shoot first and then once all of those colored pins are shot, the arm will wait for a second input to continue shooting different colored targets. 
+
+## Note
+
+This repository is a detached fork from the repository the group has worked in.
 
 ## Quickstart
 0. Connect the arduino and realsense camera to the computer
